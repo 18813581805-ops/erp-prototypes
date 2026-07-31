@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta name="build-commit" content="18d3996">
+<meta name="build-time" content="2026-07-22T02:19:01.311Z">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>店铺管理 · 跨境电商 ERP</title>
+  <link rel="stylesheet" href="../../ui-library/tokens.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="erp-shell">
+
+  <!-- 左侧导航 -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">云</div>
+      <div>
+        <div class="brand-title">云易盒 ERP</div>
+        <div class="brand-subtitle">Cross-Border Manager</div>
+      </div>
+    </div>
+    <nav class="side-menu">
+      <div class="menu-group">基础数据</div>
+      <button class="side-item active"><span class="side-icon">店</span><span>店铺管理</span></button>
+      <button class="side-item"><span class="side-icon">商</span><span>商品管理</span></button>
+      <button class="side-item"><span class="side-icon">仓</span><span>仓库管理</span></button>
+      <div class="menu-group">订单管理</div>
+      <button class="side-item"><span class="side-icon">订</span><span>订单列表</span></button>
+      <button class="side-item"><span class="side-icon">审</span><span>待审订单</span></button>
+      <div class="menu-group">包裹管理</div>
+      <button class="side-item"><span class="side-icon">包</span><span>包裹列表</span></button>
+    </nav>
+  </aside>
+
+  <!-- 主区域 -->
+  <main class="main">
+    <header class="page-header">
+      <div class="header-left">
+        <button class="header-icon-btn">☰</button>
+      </div>
+      <div class="header-meta">
+        <button class="header-icon-btn">通知</button>
+        <span class="avatar">管</span><span>管理员</span>
+      </div>
+    </header>
+
+    <!-- 页面标题 -->
+    <section class="page-title-panel">
+      <div>
+        <h1>店铺管理</h1>
+        <p>统一查看各平台店铺信息，支持筛选、授权、资料维护与日志追溯</p>
+      </div>
+    </section>
+
+    <section class="sensitive-alert">当前为脱敏查看模式</section>
+
+    <!-- 平台 Tab -->
+    <section class="platform-tabs">
+      <button class="platform-tab active">全部 (8)</button>
+      <button class="platform-tab">Amazon (2)</button>
+      <button class="platform-tab">Shopee (4)</button>
+      <button class="platform-tab">AliExpress (1)</button>
+      <button class="platform-tab">Lazada</button>
+      <button class="platform-tab">TikTok Shop</button>
+      <button class="platform-tab">其他平台 (0)</button>
+    </section>
+
+    <!-- 查询区 -->
+    <section class="content-panel query-panel">
+      <div class="query-grid">
+        <div class="field">
+          <label>店铺名称</label>
+          <input id="filterKeyword" placeholder="搜索主店铺名称、别名、子店铺名称" />
+        </div>
+        <div class="field">
+          <label>店铺主体</label>
+          <select class="ant-select" id="filterBody"><option>全部</option><option>云易盒科技有限公司</option><option>云易盒科技美国</option></select>
+        </div>
+        <div class="field">
+          <label>站点</label>
+          <select class="ant-select" id="filterSite"><option>全部</option><option>MY</option><option>SG</option><option>TH</option><option>TW</option><option>ID</option><option>VN</option><option>PH</option><option>BR</option><option>US</option></select>
+        </div>
+        <div class="field">
+          <label>店铺状态</label>
+          <select class="ant-select" id="filterStatus"><option>全部</option><option>启用</option><option>停用</option><option>注销</option></select>
+        </div>
+        <div class="field">
+          <label>授权状态</label>
+          <select class="ant-select" id="filterAuth"><option>全部</option><option>已授权</option><option>即将过期</option><option>已过期</option><option>未授权</option></select>
+        </div>
+        <div class="field">
+          <label>运营人员</label>
+          <input id="filterOperator" placeholder="选择运营人员" />
+        </div>
+        <div class="field advanced-field" hidden>
+          <label>是否主账号</label>
+          <select class="ant-select" id="filterMainAccount"><option>全部</option><option>是</option><option>否</option></select>
+        </div>
+        <div class="field advanced-field" hidden>
+          <label>是否 SIP</label>
+          <select class="ant-select" id="filterSip"><option>全部</option><option>是</option><option>否</option></select>
+        </div>
+        <div class="field advanced-field" hidden>
+          <label>平台店铺类型</label>
+          <select class="ant-select" id="filterPlatformType"><option>全部</option><option>优选店铺</option><option>商城店铺</option><option>普通店铺</option><option>专业卖家</option></select>
+        </div>
+        <div class="field advanced-field" hidden>
+          <label>事业部</label>
+          <select class="ant-select" id="filterBU"><option>全部</option><option>东南亚事业部</option><option>北美事业部</option><option>拉美事业部</option></select>
+        </div>
+        <div class="query-actions">
+          <button class="btn primary" id="btnSearch" type="button">搜索</button>
+          <button class="btn" id="btnReset" type="button">重置</button>
+          <button class="btn-link" id="btnToggleAdvanced" type="button">展开高级筛选</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 操作区 -->
+    <section class="action-bar">
+      <div class="action-left">
+        <button class="btn primary" id="btnAddStore">+ 新增店铺</button>
+        <button class="btn" disabled id="btnBatchDownloadPayment" type="button">批量下载收款信息</button>
+        <button class="btn" disabled id="btnBatchDelete">批量删除</button>
+        <button class="btn">设置部门/人员</button>
+        <div class="action-dropdown">
+          <button class="btn">更多操作 ▾</button>
+        </div>
+        <div class="action-dropdown quick-auth-dropdown" id="quickAuthDropdown">
+          <button class="btn" id="btnQuickAuth" type="button">立即授权 ▾</button>
+          <div class="action-menu" id="quickAuthMenu" hidden>
+            <button type="button" class="action-menu-item" data-auth-type="store">店铺授权</button>
+            <button type="button" class="action-menu-item" data-auth-type="ad" hidden>广告授权</button>
+            <button type="button" class="action-menu-item" data-auth-type="affiliate" hidden>联盟授权</button>
+          </div>
+        </div>
+      </div>
+      <div class="action-right">
+        <span class="action-count" id="selectedCount">已选 0 项</span>
+      </div>
+    </section>
+
+    <!-- 列表区 -->
+    <section class="content-panel list-panel">
+      <div class="table-wrap">
+        <table class="data-table" id="storeTable">
+          <thead>
+            <tr>
+              <th class="col-check"><input type="checkbox" id="selectAll" /></th>
+              <th class="col-name">店铺主名称</th>
+              <th class="col-alias">店铺别名</th>
+              <th class="col-body">店铺主体</th>
+              <th class="col-site">站点</th>
+              <th class="col-region platform-col platform-amazon">区域</th>
+              <th class="col-type">店铺类型</th>
+              <th class="col-platform-type">平台店铺类型</th>
+              <th class="col-sub platform-col platform-shopee">子店铺名称</th>
+              <th class="col-shopee-ext platform-col platform-shopee">主账号 / SIP</th>
+              <th class="col-child-count platform-col platform-shopee">关联子店铺数</th>
+              <th class="col-ad-account platform-col platform-tiktok">广告户 ID</th>
+              <th class="col-bc-id platform-col platform-tiktok">BC ID</th>
+              <th class="col-bu">事业部</th>
+              <th class="col-status">店铺状态</th>
+              <th class="col-auth">授权状态</th>
+              <th class="col-auth-time">授权时间</th>
+              <th class="col-expire">授权到期</th>
+              <th class="col-sync">同步订单时间</th>
+              <th class="col-ops">运营/客服</th>
+              <th class="col-actions">操作</th>
+            </tr>
+          </thead>
+          <tbody id="storeTableBody"></tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <span>共 <strong id="totalCount">5</strong> 条</span>
+        <div class="pagination">
+          <button class="page-btn active">1</button>
+          <span class="page-size">10 条/页</span>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ============ 关联子店铺列表 ============ -->
+<div class="drawer-overlay" id="drawerChildStores" hidden>
+  <div class="drawer child-store-drawer">
+    <div class="drawer-header">
+      <div class="drawer-title-row">
+        <button class="drawer-close inline-close" id="btnCloseChildStores">✕</button>
+        <h3>关联子店铺列表</h3>
+        <span class="tag tag-blue" id="childParentAlias">—</span>
+      </div>
+    </div>
+    <div class="drawer-body">
+      <p class="drawer-help" id="childStoreSummary">当前全球店主账号关联的子店铺，子店铺授权 Token 随主账号统一刷新。</p>
+      <table class="child-store-table">
+        <thead>
+          <tr>
+            <th>系统别名</th>
+            <th>站点</th>
+            <th>授权状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="childStoreRows"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 授权成功后批量权限设置 ============ -->
+<div class="modal-overlay" id="modalPostAuthPermission" hidden>
+  <div class="modal post-auth-permission-modal">
+    <div class="modal-header">
+      <div>
+        <h3>批量设置店铺用户权限</h3>
+        <p class="modal-subtitle">授权成功后，为本次录入的店铺快速分配可访问用户与权限。</p>
+      </div>
+      <button class="modal-close" id="btnClosePostAuthPermission">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert-info permission-guide">已录入 <strong id="postAuthStoreCount">0</strong> 个店铺。勾选用户与权限后，将批量应用到下方店铺。</div>
+      <div class="form-section-title">本次授权店铺</div>
+      <div class="permission-store-list" id="postAuthStoreList"></div>
+      <div class="form-section-title">选择用户</div>
+      <div class="checkbox-grid permission-user-grid">
+        <label><input type="checkbox" class="permission-user-check" value="张三" checked /> 张三</label>
+        <label><input type="checkbox" class="permission-user-check" value="李四" /> 李四</label>
+        <label><input type="checkbox" class="permission-user-check" value="王五" /> 王五</label>
+        <label><input type="checkbox" class="permission-user-check" value="赵六" /> 赵六</label>
+      </div>
+      <div class="form-section-title">批量权限</div>
+      <div class="checkbox-grid">
+        <label><input type="checkbox" class="post-auth-permission-check" value="订单查看" checked /> 订单查看</label>
+        <label><input type="checkbox" class="post-auth-permission-check" value="商品管理" /> 商品管理</label>
+        <label><input type="checkbox" class="post-auth-permission-check" value="库存同步" /> 库存同步</label>
+        <label><input type="checkbox" class="post-auth-permission-check" value="资金信息查看" /> 资金信息查看</label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="btnSkipPostAuthPermission" type="button">稍后设置</button>
+      <button class="btn primary" id="btnSavePostAuthPermission" type="button">批量设置并完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Shopee 授权回调后系统录入 ============ -->
+<div class="modal-overlay" id="modalShopeeAuthResult" hidden>
+  <div class="modal shopee-auth-modal">
+    <div class="modal-header">
+      <h3>Shopee 平台新增授权录入</h3>
+      <button class="modal-close" id="btnCloseShopeeAuthResult">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="auth-progress">
+        <div class="progress-step done"><span>✓</span><strong>发起授权</strong></div>
+        <div class="progress-line"></div>
+        <div class="progress-step done"><span>✓</span><strong>平台确认</strong></div>
+        <div class="progress-line"></div>
+        <div class="progress-step active"><span>3</span><strong>系统录入</strong></div>
+      </div>
+      <div class="auth-result-state">
+        <div class="success-mark">✓</div>
+        <h3>授权成功！共获取到 <span id="shopeeAssetCount">0</span> 个店铺资产</h3>
+        <p>请为以下店铺设置系统别名，以便在系统内标识。所有返回店铺均填写后才可确认录入。</p>
+      </div>
+      <div class="alias-error" id="aliasError" hidden>请补充所有店铺的系统别名；不需要录入时请点击取消录入。</div>
+      <table class="auth-result-table">
+        <thead>
+          <tr>
+            <th>后台店铺名称</th>
+            <th>站点</th>
+            <th>系统别名（必填）</th>
+          </tr>
+        </thead>
+        <tbody id="shopeeAuthAssetRows"></tbody>
+      </table>
+      <p class="form-help">主店铺与所有子店铺都必须完成命名后才允许保存；未填写时系统不会创建任何店铺记录。</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="btnCancelShopeeAuthResult" type="button">取消录入</button>
+      <button class="btn primary" id="btnConfirmShopeeAuthResult" type="button">确认录入系统</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 店铺详情抽屉 ============ -->
+<div class="drawer-overlay" id="drawerDetail" hidden>
+  <div class="drawer detail-primary">
+    <div class="drawer-header">
+      <h3 id="detailDrawerTitle">店铺详情</h3>
+      <button class="drawer-close" id="btnCloseDetail">✕</button>
+    </div>
+    <div class="drawer-body">
+      <!-- 顶部摘要 -->
+      <div class="detail-summary">
+        <div class="summary-item"><span class="summary-label">店铺名称</span><span class="summary-value" id="detailName">—</span></div>
+        <div class="summary-item"><span class="summary-label">平台</span><span id="detailPlatform" class="tag tag-blue">Shopee</span></div>
+        <div class="summary-item"><span class="summary-label">站点</span><span id="detailSite" class="tag">—</span></div>
+        <div class="summary-item"><span class="summary-label">店铺状态</span><span id="detailStatus" class="tag tag-green">启用</span></div>
+        <div class="summary-item"><span class="summary-label">授权状态</span><span id="detailAuthStatus" class="tag tag-green">已授权</span></div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="detail-tabs">
+        <button class="detail-tab active" data-tab="basic">基础资料</button>
+        <button class="detail-tab" data-tab="biz">业务信息</button>
+        <button class="detail-tab" data-tab="auth">授权信息</button>
+        <button class="detail-tab" data-tab="log">操作日志</button>
+      </div>
+
+      <!-- 基础资料 -->
+      <div class="tab-content active" id="tabBasic">
+        <div class="tab-toolbar">
+          <button class="btn primary" id="btnEditBasic" type="button">编辑基础资料</button>
+        </div>
+        <div class="card">
+          <div class="card-title">基础识别信息</div>
+          <div class="desc-grid">
+            <div class="desc-item"><span class="desc-label">电商平台</span><span class="desc-value" id="basicPlatform">—</span></div>
+            <div class="desc-item"><span class="desc-label">云易盒店铺别名</span><span class="desc-value" id="basicAlias">—</span></div>
+            <div class="desc-item"><span class="desc-label">后台店铺ID</span><span class="desc-value" id="basicShopId">—</span></div>
+            <div class="desc-item"><span class="desc-label">后台店铺名称</span><span class="desc-value" id="basicShopName">—</span></div>
+            <div class="desc-item"><span class="desc-label">店铺邮箱</span><span class="desc-value" id="basicEmail">—</span></div>
+            <div class="desc-item"><span class="desc-label">站点</span><span class="desc-value" id="basicSite">—</span></div>
+            <div class="desc-item"><span class="desc-label">店铺类型</span><span class="desc-value" id="basicType">—</span></div>
+            <div class="desc-item platform-detail-shopee"><span class="desc-label">是否主账号授权</span><span class="desc-value" id="basicMainAcct">—</span></div>
+            <div class="desc-item platform-detail-shopee"><span class="desc-label">是否SIP</span><span class="desc-value" id="basicSip">—</span></div>
+            <div class="desc-item platform-detail-tiktok"><span class="desc-label">广告户 ID</span><span class="desc-value" id="basicAdAccountId">—</span></div>
+            <div class="desc-item platform-detail-tiktok"><span class="desc-label">BC ID</span><span class="desc-value" id="basicBcId">—</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">账号环境与注册信息</div>
+          <div class="desc-grid">
+            <div class="desc-item"><span class="desc-label">浏览器名称</span><span class="desc-value" id="basicBrowserName">—</span></div>
+            <div class="desc-item"><span class="desc-label">浏览器店铺名称</span><span class="desc-value" id="basicBrowserStore">—</span></div>
+            <div class="desc-item"><span class="desc-label">账号注册类型</span><span class="desc-value" id="basicAccountType">—</span></div>
+            <div class="desc-item"><span class="desc-label">注册类型</span><span class="desc-value" id="basicRegistrationType">—</span></div>
+            <div class="desc-item"><span class="desc-label">注册主体</span><span class="desc-value" id="basicRegistrationCompany">—</span></div>
+            <div class="desc-item"><span class="desc-label">注册/信用代码</span><span class="desc-value" id="basicRegistrationCode">—</span></div>
+            <div class="desc-item"><span class="desc-label">企业注册时间</span><span class="desc-value" id="basicRegistrationDate">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 业务信息 -->
+      <div class="tab-content" id="tabBiz" hidden>
+        <div class="tab-toolbar">
+          <div class="sensitive-bar" id="sensitiveBar">当前为脱敏查看模式</div>
+          <button class="btn" id="btnUnlockSensitive" type="button">查看完整资金信息</button>
+          <button class="btn" id="btnLockSensitive" type="button" hidden>重新锁定资金信息</button>
+          <button class="btn primary" id="btnEditBiz" type="button">编辑业务信息</button>
+        </div>
+        <div class="card">
+          <div class="card-title">生命周期信息</div>
+          <div class="desc-grid">
+            <div class="desc-item"><span class="desc-label">账号需求部门</span><span class="desc-value" id="bizDept">—</span></div>
+            <div class="desc-item"><span class="desc-label">账号需求负责人</span><span class="desc-value" id="bizOwner">—</span></div>
+            <div class="desc-item"><span class="desc-label">店铺使用状态</span><span class="desc-value" id="bizUseStatus">—</span></div>
+            <div class="desc-item"><span class="desc-label">是否已启用</span><span class="desc-value" id="bizEnabled">—</span></div>
+            <div class="desc-item"><span class="desc-label">注销日期</span><span class="desc-value" id="bizCancelDate">—</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">收款信息</div>
+          <div class="card-actions">
+            <button class="btn" id="btnDownloadPayment" type="button">下载收款信息</button>
+          </div>
+          <div class="payment-list" id="paymentList"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">保证金信息</div>
+          <div class="desc-grid">
+            <div class="desc-item"><span class="desc-label">是否缴纳保证金</span><span class="desc-value" id="depositHas">—</span></div>
+            <div class="desc-item"><span class="desc-label">保证金退回状态</span><span class="desc-value" id="depositRefundStatus">—</span></div>
+            <div class="desc-item"><span class="desc-label">保证金缴纳账号</span><span class="desc-value sensitive-value" id="depositAccount">—</span></div>
+            <div class="desc-item"><span class="desc-label">保证金缴纳金额</span><span class="desc-value" id="depositAmount">—</span></div>
+            <div class="desc-item"><span class="desc-label">保证金退回时间</span><span class="desc-value" id="depositRefundTime">—</span></div>
+            <div class="desc-item"><span class="desc-label">退回流水号</span><span class="desc-value" id="depositRefundTransactionId">—</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">运营归属与备注</div>
+          <div class="desc-grid">
+            <div class="desc-item"><span class="desc-label">运营人员</span><span class="desc-value" id="bizOperator">—</span></div>
+            <div class="desc-item"><span class="desc-label">客服人员</span><span class="desc-value" id="bizCs">—</span></div>
+            <div class="desc-item"><span class="desc-label">事业部</span><span class="desc-value" id="bizBu">—</span></div>
+            <div class="desc-item desc-wide"><span class="desc-label">备注</span><span class="desc-value" id="bizRemarks">—</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">关键字段变更记录</div>
+          <div class="change-records">
+            <div>
+              <h4>注册主体变更</h4>
+              <div id="bodyChangeRecords"></div>
+            </div>
+            <div>
+              <h4>收款信息变更</h4>
+              <div id="paymentChangeRecords"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 授权信息 -->
+      <div class="tab-content" id="tabAuth" hidden>
+        <div class="card">
+          <div class="card-title">店铺授权</div>
+          <div class="desc-grid">
+            <div class="desc-item"><span class="desc-label">授权状态</span><span id="authStatus" class="tag tag-green">—</span></div>
+            <div class="desc-item"><span class="desc-label">授权时间</span><span class="desc-value" id="authTime">—</span></div>
+            <div class="desc-item"><span class="desc-label">过期时间</span><span class="desc-value" id="authExpire">—</span></div>
+            <div class="desc-item"><span class="desc-label">剩余天数</span><span class="desc-value" id="authRemain">—</span></div>
+            <div class="desc-item"><span class="desc-label">店铺类型</span><span class="desc-value" id="authStoreType">—</span></div>
+            <div class="desc-item"><span class="desc-label">主账号信息</span><span class="desc-value" id="authMainAccount">—</span></div>
+          </div>
+        </div>
+        <div class="card" id="mainAccountCard" hidden>
+          <div class="card-title">同一主账号下其他店铺</div>
+          <div id="relatedStores" class="related-list"></div>
+          <div class="alert-info" id="unrecordedStoresTip" hidden>该主账号下还有 <strong id="unrecordedStoresCount">0</strong> 个店铺未录入，是否录入？</div>
+        </div>
+      </div>
+
+      <!-- 操作日志 -->
+      <div class="tab-content" id="tabLog" hidden>
+        <table class="data-table">
+          <thead>
+            <tr><th>操作时间</th><th>操作人</th><th>模块</th><th>操作类型</th><th>变更内容</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>2026-05-19 14:30</td><td>Freddy</td><td>授权</td><td>验证</td><td>完成 Shopee 主账号授权，有效期至 2027-05-19</td></tr>
+            <tr><td>2026-05-19 10:00</td><td>Freddy</td><td>基础资料</td><td>新增</td><td>创建店铺记录</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 编辑基础资料抽屉 ============ -->
+<div class="drawer-overlay" id="drawerEditBasic" hidden>
+  <div class="drawer" style="width:640px;">
+    <div class="drawer-header">
+      <h3>编辑基础资料</h3>
+      <button class="drawer-close" id="btnCloseEditBasic">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="form-section-title">基础识别信息</div>
+      <div class="form-grid">
+        <div class="form-group" id="editPlatformReadonlyGroup"><label class="form-label">电商平台</label><div class="form-readonly" id="editPlatform">—</div></div>
+        <div class="form-group" id="editPlatformSelectGroup" hidden>
+          <label class="form-label required">电商平台</label>
+          <select class="ant-select" id="editPlatformSelect">
+            <option value="">请选择电商平台</option>
+            <option>Shopee</option>
+            <option>Amazon</option>
+            <option>TikTok Shop</option>
+            <option>Lazada</option>
+            <option>AliExpress</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label required">云易盒店铺别名</label><input class="form-input" id="editAlias" /></div>
+        <div class="form-group"><label class="form-label">店铺邮箱</label><input class="form-input" id="editStoreEmail" /></div>
+        <div class="form-group platform-edit-tiktok"><label class="form-label">广告户 ID</label><input class="form-input" id="editAdAccountId" placeholder="TikTok 店铺填写" /></div>
+        <div class="form-group platform-edit-tiktok"><label class="form-label">BC ID</label><input class="form-input" id="editBcId" placeholder="TikTok 店铺填写" /></div>
+        <div class="form-group"><label class="form-label">后台店铺ID</label><input class="form-input" id="editShopId" /></div>
+        <div class="form-group"><label class="form-label">后台店铺名称</label><input class="form-input" id="editShopName" /></div>
+        <div class="form-group" id="editSiteReadonlyGroup"><label class="form-label">站点</label><div class="form-readonly" id="editSite">—</div></div>
+        <div class="form-group" id="editSiteSelectGroup" hidden>
+          <label class="form-label required">站点</label>
+          <select class="ant-select" id="editSiteSelect">
+            <option value="">请选择站点</option>
+            <option>MY</option>
+            <option>SG</option>
+            <option>TH</option>
+            <option>TW</option>
+            <option>ID</option>
+            <option>VN</option>
+            <option>PH</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label required">店铺类型</label><select class="ant-select" id="editStoreType"><option value="">请选择店铺类型</option><option value="本土">本土</option><option value="全球">全球</option></select></div>
+      </div>
+      <div class="form-section-title">账号环境与注册信息</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label required">浏览器名称</label>
+          <input type="hidden" id="editBrowserName" />
+          <div class="enum-select" id="browserEnumSelect">
+            <button class="enum-trigger" id="browserEnumTrigger" type="button">请选择浏览器名称</button>
+            <div class="enum-dropdown" id="browserEnumDropdown" hidden>
+              <div id="browserEnumOptions"></div>
+              <button class="enum-add" id="btnAddBrowserEnum" type="button">+ 添加浏览器名称</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label required">浏览器店铺名称</label><input class="form-input" id="editBrowserStore" /></div>
+        <div class="form-group"><label class="form-label required">账号注册类型</label><select class="ant-select" id="editAccountType"><option value="">请选择账号注册类型</option><option>自注册</option><option>购买</option></select></div>
+        <div class="form-group"><label class="form-label required">注册类型</label><select class="ant-select" id="editRegistrationType"><option value="">请选择注册类型</option><option>企业</option><option>个人</option></select></div>
+        <div class="form-group form-wide"><label class="form-label required">注册主体选择器</label><select class="ant-select" id="editRegistrationSubject"></select></div>
+        <div class="form-group"><label class="form-label">注册/信用代码</label><div class="form-readonly" id="editRegistrationCode">—</div></div>
+        <div class="form-group"><label class="form-label">企业注册时间</label><div class="form-readonly" id="editEnterpriseRegistrationTime">—</div></div>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn" id="btnCancelEditBasic" type="button">取消</button>
+      <button class="btn primary" id="btnSaveEditBasic" type="button">保存并关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TikTok 广告数据更新设置 ============ -->
+<div class="modal-overlay" id="modalAdSync" hidden>
+  <div class="modal" style="width:520px;">
+    <div class="modal-header">
+      <h3>设置广告数据更新时段</h3>
+      <button class="modal-close" id="btnCloseAdSync">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="auth-tip-card">
+        <div class="auth-tip-title">广告授权已完成</div>
+        <ul class="auth-tip-list">
+          <li>系统会按所选时间段拉取 TikTok 广告数据</li>
+          <li>该设置也可在已授权广告中单独修改</li>
+        </ul>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label required">开始日期</label>
+          <input class="form-input" id="adSyncStart" placeholder="YYYY-MM-DD" />
+        </div>
+        <div class="form-group">
+          <label class="form-label required">结束日期</label>
+          <input class="form-input" id="adSyncEnd" placeholder="YYYY-MM-DD" />
+        </div>
+        <div class="form-group form-wide">
+          <label class="form-label">更新频率</label>
+          <select class="ant-select" id="adSyncFrequency">
+            <option>每日 02:00</option>
+            <option>每日 06:00</option>
+            <option>每 6 小时</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="btnCancelAdSync" type="button">取消</button>
+      <button class="btn primary" id="btnSaveAdSync" type="button">保存设置</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 编辑业务信息抽屉 ============ -->
+<div class="drawer-overlay" id="drawerEditBiz" hidden>
+  <div class="drawer" style="width:680px;">
+    <div class="drawer-header">
+      <h3>编辑业务信息</h3>
+      <button class="drawer-close" id="btnCloseEditBiz">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="form-section-title">生命周期信息</div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label required">账号需求部门</label><select class="ant-select" id="editDept"><option value="">请选择</option><option>只加载一级部门</option></select></div>
+        <div class="form-group"><label class="form-label required">账号需求负责人</label><input class="form-input" id="editOwner" /></div>
+        <div class="form-group"><label class="form-label">店铺使用状态</label><input class="form-input" id="editUseStatus" /></div>
+        <div class="form-group"><label class="form-label">是否已启用</label><select class="ant-select" id="editEnabled"><option>是</option><option>否</option></select></div>
+      </div>
+      <div class="form-section-title">收款信息</div>
+      <div class="payment-edit-list" id="paymentEditList"></div>
+      <button class="btn" id="btnAddPaymentAccount" type="button">添加收款账号</button>
+      <div class="form-section-title">保证金信息</div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">是否缴纳保证金</label><select class="ant-select" id="editHasDeposit"><option>否</option><option>是</option></select></div>
+        <div class="form-group"><label class="form-label">保证金退回状态</label><select class="ant-select" id="editDepositRefundStatus"><option>无需退回</option><option>未退回</option><option>已退回</option></select></div>
+        <div class="form-group"><label class="form-label">保证金缴纳账号</label><input class="form-input" id="editDepositAccount" /></div>
+        <div class="form-group"><label class="form-label">保证金缴纳金额</label><input class="form-input" id="editDepositAmount" /></div>
+        <div class="form-group"><label class="form-label">保证金退回时间</label><input class="form-input" id="editDepositRefundTime" /></div>
+        <div class="form-group"><label class="form-label">退回流水号</label><input class="form-input" id="editDepositRefundTransactionId" /></div>
+        <div class="form-group form-wide"><label class="form-label">备注</label><textarea class="form-input textarea" id="editRemarks"></textarea></div>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn" id="btnCancelEditBiz" type="button">取消</button>
+      <button class="btn primary" id="btnSaveEditBiz" type="button">保存并关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 店铺授权确认弹窗 ============ -->
+<div class="modal-overlay" id="modalReAuth" hidden>
+  <div class="modal" style="width:440px;">
+    <div class="modal-header">
+      <h3>店铺授权</h3>
+      <button class="modal-close" id="btnCloseReAuth">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="auth-tip-card">
+        <div class="auth-tip-title">即将跳转 Shopee 店铺账号授权页面</div>
+        <ul class="auth-tip-list">
+          <li>当前授权将于 <strong id="reAuthExpire">—</strong> 到期</li>
+          <li>本土/单店铺授权只更新授权有效期，不返回子店铺资产</li>
+          <li>如需录入主店铺和子店铺名称，请在 Shopee 主账号/全球店铺行发起授权</li>
+        </ul>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="btnCancelReAuth">取消</button>
+      <button class="btn primary" id="btnConfirmReAuth">前往 Shopee 单店铺授权</button>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="script.js?v=1716422403"></script>
+</body>
+</html>
