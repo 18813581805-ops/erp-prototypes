@@ -117,6 +117,13 @@ ul{margin:0;padding:0;list-style:none}
 .action-menu-item:disabled{color:rgba(0,0,0,.25);cursor:not-allowed;background:transparent}
 .action-menu-item.is-disabled:hover,
 .action-menu-item:disabled:hover{background:transparent;color:rgba(0,0,0,.25)}
+.row-auth-menu{position:fixed;z-index:2100;min-width:140px;padding:4px;border:1px solid var(--border);border-radius:8px;background:#fff;box-shadow:0 6px 16px rgba(0,0,0,.12)}
+.row-auth-menu .action-menu-item{display:block;width:100%;padding:8px 12px;border:none;border-radius:6px;background:transparent;text-align:left;font-size:14px;color:var(--text);cursor:pointer}
+.row-auth-menu .action-menu-item:hover{background:var(--primary-bg);color:var(--primary)}
+.row-auth-menu .action-menu-item.is-disabled,
+.row-auth-menu .action-menu-item:disabled{color:rgba(0,0,0,.25);cursor:not-allowed}
+.row-auth-menu .action-menu-item.is-disabled:hover,
+.row-auth-menu .action-menu-item:disabled:hover{background:transparent;color:rgba(0,0,0,.25)}
 
 /* ===== Table ===== */
 .list-panel{margin-top:0;border-top:none;border-radius:0 0 8px 8px;overflow:hidden;min-width:0}
