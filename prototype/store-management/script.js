@@ -326,20 +326,17 @@
     var options = authOptionsForPlatform(platform);
     var adSupported = platform === 'Shopee' || platform === 'Amazon' || platform === 'TikTok Shop';
     var disableAd = !adSupported;
-    var disableAffiliate = platform !== 'Shopee';
 
     menu.querySelectorAll('.action-menu-item').forEach(function(item) {
       var type = item.dataset.authType;
       var visible = options.indexOf(type) !== -1;
+      // 非 Shopee 不展示联盟授权；广告不支持时仍展示并置灰
       if (type === 'ad' && disableAd) visible = true;
-      if (type === 'affiliate' && disableAffiliate) visible = true;
-      var disabled = (type === 'ad' && disableAd) || (type === 'affiliate' && disableAffiliate);
+      var disabled = type === 'ad' && disableAd;
       item.hidden = !visible;
       item.disabled = disabled;
       item.classList.toggle('is-disabled', disabled);
-      if (type === 'ad' && disableAd) item.title = '当前店铺不支持广告授权';
-      else if (type === 'affiliate' && disableAffiliate) item.title = '非 Shopee 店铺不支持联盟授权';
-      else item.title = '';
+      item.title = (type === 'ad' && disableAd) ? '当前店铺不支持广告授权' : '';
     });
   }
 
