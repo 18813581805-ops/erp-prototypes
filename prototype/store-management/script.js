@@ -215,6 +215,7 @@
       var opsHtml =
         '<button class="table-action-link" data-op="详情" data-id="' + s.id + '" type="button">详情</button>' +
         '<button class="table-action-link" data-op="编辑" data-id="' + s.id + '" type="button">编辑</button>' +
+        '<button class="table-action-link" data-op="立即授权" data-id="' + s.id + '" type="button">立即授权 ▾</button>' +
         '<button class="table-action-more" data-op="更多" data-id="' + s.id + '" type="button">更多 ▾</button>';
       var shopeeExt = '—';
       if (s.platform === 'Shopee') {
@@ -272,22 +273,10 @@
         activePlatform = tab.textContent.trim().replace(/\s*\(\d+\)$/, '');
         if (activePlatform === '全部') activePlatform = '全部平台';
         if (activePlatform === '其他平台') activePlatform = '其他平台';
-        closeQuickAuthMenu();
+        closeRowAuthMenu();
         renderTable();
-        updateQuickAuthMenu();
       });
     });
-  }
-
-  function getSelectedStores() {
-    return Array.from(selectedIds).map(function(id) {
-      return window.STORE_DATA.find(function(s){ return s.id === id; });
-    }).filter(Boolean);
-  }
-
-  function resolveAuthPlatform(store) {
-    if (activePlatform && activePlatform !== '全部平台') return activePlatform;
-    return store ? store.platform : '';
   }
 
   function authOptionsForPlatform(platform) {
@@ -298,44 +287,6 @@
       return ['store', 'ad', 'affiliate'];
     }
     return ['store'];
-  }
-
-  function updateQuickAuthMenu(platform) {
-    var options = authOptionsForPlatform(platform || (activePlatform === '全部平台' ? '' : activePlatform));
-    var isAllTab = activePlatform === '全部平台';
-    var adSupportedOnAll = platform === 'Shopee' || platform === 'Amazon' || platform === 'TikTok Shop';
-    var disableAd = isAllTab && platform && !adSupportedOnAll;
-    var disableAffiliate = isAllTab && platform && platform !== 'Shopee';
-
-    document.querySelectorAll('#quickAuthMenu .action-menu-item').forEach(function(item) {
-      var type = item.dataset.authType;
-      var visible = options.indexOf(type) !== -1;
-      if (type === 'affiliate' && disableAffiliate) visible = true;
-      if (type === 'ad' && isAllTab && platform) {
-        if (disableAd || adSupportedOnAll) visible = true;
-      }
-      var disabled = (type === 'ad' && disableAd) || (type === 'affiliate' && disableAffiliate);
-      item.hidden = !visible;
-      item.disabled = disabled;
-      item.classList.toggle('is-disabled', disabled);
-      if (type === 'ad' && disableAd) {
-        item.title = '当前店铺不支持广告授权';
-      } else if (type === 'affiliate' && disableAffiliate) {
-        item.title = '非 Shopee 店铺不支持联盟授权';
-      } else {
-        item.title = '';
-      }
-    });
-  }
-
-  function closeQuickAuthMenu() {
-    var menu = $('quickAuthMenu');
-    if (menu) menu.hidden = true;
-  }
-
-  function openQuickAuthMenu() {
-    var menu = $('quickAuthMenu');
-    if (menu) menu.hidden = false;
   }
 
   function authTypeLabel(type) {
@@ -366,33 +317,70 @@
     return platformMap[authType] || ('https://example.com/' + encodeURIComponent(platform) + '/' + authType + '-auth');
   }
 
-  function ensureSingleSelectedStore() {
-    var stores = getSelectedStores();
-    if (stores.length === 0) {
-      toast('请先选择一个店铺后再进行授权', 'error');
-      return null;
-    }
-    if (stores.length > 1) {
-      toast('仅可选一个店铺进行授权', 'error');
-      return null;
-    }
-    return stores[0];
+  function closeRowAuthMenu() {
+    var menu = $('rowAuthMenu');
+    if (menu) menu.remove();
   }
 
-  function startQuickAuth(authType) {
-    var store = ensureSingleSelectedStore();
+  function fillRowAuthMenu(menu, platform) {
+    var options = authOptionsForPlatform(platform);
+    var adSupported = platform === 'Shopee' || platform === 'Amazon' || platform === 'TikTok Shop';
+    var disableAd = !adSupported;
+    var disableAffiliate = platform !== 'Shopee';
+
+    menu.querySelectorAll('.action-menu-item').forEach(function(item) {
+      var type = item.dataset.authType;
+      var visible = options.indexOf(type) !== -1;
+      if (type === 'ad' && disableAd) visible = true;
+      if (type === 'affiliate' && disableAffiliate) visible = true;
+      var disabled = (type === 'ad' && disableAd) || (type === 'affiliate' && disableAffiliate);
+      item.hidden = !visible;
+      item.disabled = disabled;
+      item.classList.toggle('is-disabled', disabled);
+      if (type === 'ad' && disableAd) item.title = '当前店铺不支持广告授权';
+      else if (type === 'affiliate' && disableAffiliate) item.title = '非 Shopee 店铺不支持联盟授权';
+      else item.title = '';
+    });
+  }
+
+  function openRowAuthMenu(anchor, store) {
+    closeRowAuthMenu();
+    closeActionMenu();
+    var menu = document.createElement('div');
+    menu.id = 'rowAuthMenu';
+    menu.className = 'row-auth-menu';
+    menu.innerHTML =
+      '<button type="button" class="action-menu-item" data-auth-type="store">店铺授权</button>' +
+      '<button type="button" class="action-menu-item" data-auth-type="ad">广告授权</button>' +
+      '<button type="button" class="action-menu-item" data-auth-type="affiliate">联盟授权</button>';
+    fillRowAuthMenu(menu, store.platform);
+    document.body.appendChild(menu);
+
+    var rect = anchor.getBoundingClientRect();
+    menu.style.top = Math.min(rect.bottom + 6, window.innerHeight - menu.offsetHeight - 12) + 'px';
+    menu.style.left = Math.max(12, Math.min(rect.left, window.innerWidth - menu.offsetWidth - 12)) + 'px';
+
+    menu.addEventListener('click', function(e) {
+      var item = e.target.closest('.action-menu-item');
+      if (!item || item.hidden || item.disabled) return;
+      e.stopPropagation();
+      closeRowAuthMenu();
+      startQuickAuth(store, item.dataset.authType);
+    });
+  }
+
+  function startQuickAuth(store, authType) {
     if (!store) return;
 
-    var platform = resolveAuthPlatform(store);
+    var platform = store.platform;
     var allowed = authOptionsForPlatform(platform);
-    var isAllTab = activePlatform === '全部平台';
-    var adAllowedOnAll = platform === 'Shopee' || platform === 'Amazon' || platform === 'TikTok Shop';
-    if (isAllTab && authType === 'ad') {
-      if (!adAllowedOnAll) {
+    var adAllowed = platform === 'Shopee' || platform === 'Amazon' || platform === 'TikTok Shop';
+    if (authType === 'ad') {
+      if (!adAllowed) {
         toast(platform + ' 不支持广告授权', 'error');
         return;
       }
-    } else if (isAllTab && authType === 'affiliate') {
+    } else if (authType === 'affiliate') {
       if (platform !== 'Shopee') {
         toast(platform + ' 不支持联盟授权', 'error');
         return;
@@ -411,7 +399,7 @@
       '即将跳转 ' + platform + '「' + authTypeLabel(authType) + '」页面完成授权。\n\n' +
       '店铺：' + storeDesc + '\n' +
       '授权地址：' + jumpUrl + '\n\n' +
-      '支持选择跨境主账号、主账号下子店铺或单个本土店铺。\n点击确定模拟授权成功。'
+      '点击确定模拟授权成功。'
     );
     if (!confirmed) return;
 
@@ -444,28 +432,12 @@
     toast(platform + '「' + authTypeLabel(authType) + '」授权成功');
   }
 
-  function bindQuickAuth() {
-    updateQuickAuthMenu();
-    $('btnQuickAuth').addEventListener('click', function(e) {
-      e.stopPropagation();
-      var store = ensureSingleSelectedStore();
-      if (!store) {
-        closeQuickAuthMenu();
-        return;
-      }
-      updateQuickAuthMenu(resolveAuthPlatform(store));
-      var menu = $('quickAuthMenu');
-      menu.hidden = !menu.hidden;
-    });
-    $('quickAuthMenu').addEventListener('click', function(e) {
-      var item = e.target.closest('.action-menu-item');
-      if (!item || item.hidden || item.disabled) return;
-      e.stopPropagation();
-      closeQuickAuthMenu();
-      startQuickAuth(item.dataset.authType);
-    });
+  function bindRowAuth() {
     document.addEventListener('click', function() {
-      closeQuickAuthMenu();
+      closeRowAuthMenu();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeRowAuthMenu();
     });
   }
 
@@ -733,6 +705,7 @@
         openDetail(store);
         openEditBasic(store, 'detail');
       }
+      if (btn.dataset.op === '立即授权') openRowAuthMenu(btn, store);
       if (btn.dataset.op === '子店铺') openChildStores(store);
       if (btn.dataset.op === '更多') openRowMoreMenu(btn, store);
     });
@@ -764,6 +737,7 @@
 
   function openRowMoreMenu(anchor, store) {
     closeActionMenu();
+    closeRowAuthMenu();
     var menu = document.createElement('div');
     menu.id = 'rowActionMenu';
     menu.className = 'row-action-menu';
@@ -1713,7 +1687,7 @@
     bindRowActions();
     bindBrowserEnumSelect();
     bindCreateStore();
-    bindQuickAuth();
+    bindRowAuth();
     bindDetail();
     bindReAuth();
     bindEditBasic();
