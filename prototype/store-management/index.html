@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>店铺管理 · 跨境电商 ERP</title>
   <link rel="stylesheet" href="../../ui-library/tokens.css" />
-  <link rel="stylesheet" href="styles.css?v=202608041720" />
+  <link rel="stylesheet" href="styles.css?v=202608041740" />
 </head>
 <body>
 <div class="erp-shell">
@@ -489,15 +489,15 @@
           <div class="token-panel token-panel-edit" id="authOrderTokenPanelEdit" hidden>
             <div class="token-form-row">
               <label class="token-label" for="editOrderAccessToken">access_token:</label>
-              <input class="form-input temu-auth-input" id="editOrderAccessToken" placeholder="accessToken" />
+              <input class="form-input temu-auth-input" id="editOrderAccessToken" placeholder="accessToken" maxlength="128" />
             </div>
             <div class="token-form-row">
               <label class="token-label" for="editOrderAppKey">App Key:</label>
-              <input class="form-input temu-auth-input" id="editOrderAppKey" placeholder="appKey" />
+              <input class="form-input temu-auth-input" id="editOrderAppKey" placeholder="appKey" maxlength="64" />
             </div>
             <div class="token-form-row">
               <label class="token-label" for="editOrderAppSecret">App Secret:</label>
-              <input class="form-input temu-auth-input" id="editOrderAppSecret" placeholder="appSecret" />
+              <input class="form-input temu-auth-input" id="editOrderAppSecret" placeholder="appSecret" maxlength="64" />
             </div>
           </div>
 
@@ -511,15 +511,15 @@
           <div class="token-panel token-panel-edit" id="authProductTokenPanelEdit" hidden>
             <div class="token-form-row">
               <label class="token-label" for="editProductAccessToken">access_token:</label>
-              <input class="form-input temu-auth-input" id="editProductAccessToken" placeholder="accessToken" />
+              <input class="form-input temu-auth-input" id="editProductAccessToken" placeholder="accessToken" maxlength="128" />
             </div>
             <div class="token-form-row">
               <label class="token-label" for="editProductAppKey">App Key:</label>
-              <input class="form-input temu-auth-input" id="editProductAppKey" placeholder="appKey" />
+              <input class="form-input temu-auth-input" id="editProductAppKey" placeholder="appKey" maxlength="64" />
             </div>
             <div class="token-form-row">
               <label class="token-label" for="editProductAppSecret">App Secret:</label>
-              <input class="form-input temu-auth-input" id="editProductAppSecret" placeholder="appSecret" />
+              <input class="form-input temu-auth-input" id="editProductAppSecret" placeholder="appSecret" maxlength="64" />
             </div>
           </div>
           <p class="form-help" style="margin-top:12px;">订单拉取、商品拉取 Token 信息均为非必填；保存后将据此更新授权状态与有效期。</p>
@@ -725,7 +725,7 @@
   </div>
 </div>
 
-<script src="data.js?v=202608041720"></script>
-<script src="script.js?v=202608041720"></script>
+<script src="data.js?v=202608041740"></script>
+<script src="script.js?v=202608041740"></script>
 </body>
 </html>
