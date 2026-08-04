@@ -1388,6 +1388,33 @@
     activateDetailTab('basic');
   }
 
+  function shouldShowOzonAuthTip(store) {
+    if (!store || !isOzonPlatform(store.platform)) return false;
+    ensureOzonAuth(store);
+    if (store.ozonAuthEdited) return false;
+    return !store.clientId && !store.apiKey;
+  }
+
+  function syncOzonAuthChrome() {
+    var saveBtn = $('btnOzonAuthSave');
+    if (saveBtn) saveBtn.hidden = !ozonAuthEditing;
+    var tip = $('ozonAuthTip');
+    var showTip = currentStore ? shouldShowOzonAuthTip(currentStore) : false;
+    if (tip) tip.hidden = !showTip;
+    var card = $('ozonAuthCard');
+    if (card) card.classList.toggle('is-highlight', showTip || (ozonAuthEditing && showTip));
+    document.querySelectorAll('.ozon-auth-input').forEach(function(input) {
+      input.classList.toggle('is-highlight', ozonAuthEditing && showTip);
+    });
+    // when editing after tip cleared, still lightly highlight inputs with focus style via editing class
+    if (card) card.classList.toggle('is-editing', ozonAuthEditing);
+    document.querySelectorAll('.ozon-auth-input').forEach(function(input) {
+      if (ozonAuthEditing && !showTip) {
+        input.classList.add('is-highlight');
+      }
+    });
+  }
+
   function renderOzonAuthSummary(store) {
     ensureOzonAuth(store);
     var authInfo = tagForAuth(store.authStatus);
@@ -1402,22 +1429,17 @@
     $('viewOzonApiKey').textContent = store.apiKey || '—';
     $('inlineOzonClientId').value = store.clientId || '';
     $('inlineOzonApiKey').value = store.apiKey || '';
+    syncOzonAuthChrome();
   }
 
   function setOzonAuthHighlight(on) {
     ozonAuthHighlight = !!on;
-    var card = $('ozonAuthCard');
-    var tip = $('ozonAuthTip');
-    if (card) card.classList.toggle('is-highlight', ozonAuthHighlight);
-    if (tip) tip.hidden = !ozonAuthHighlight;
-    document.querySelectorAll('.ozon-auth-input').forEach(function(input) {
-      input.classList.toggle('is-highlight', ozonAuthHighlight && ozonAuthEditing);
-    });
+    syncOzonAuthChrome();
   }
 
   function setOzonAuthViewMode() {
     ozonAuthEditing = false;
-    setOzonAuthHighlight(false);
+    ozonAuthHighlight = false;
     $('inlineOzonClientId').hidden = true;
     $('inlineOzonApiKey').hidden = true;
     $('inlineOzonClientId').disabled = true;
@@ -1425,12 +1447,14 @@
     $('viewOzonClientId').hidden = false;
     $('viewOzonApiKey').hidden = false;
     if (currentStore) renderOzonAuthSummary(currentStore);
+    else syncOzonAuthChrome();
   }
 
   function enterOzonAuthEdit(withHighlight) {
     if (!currentStore || !isOzonPlatform(currentStore.platform)) return;
     ensureOzonAuth(currentStore);
     ozonAuthEditing = true;
+    ozonAuthHighlight = !!withHighlight && shouldShowOzonAuthTip(currentStore);
     $('inlineOzonClientId').hidden = false;
     $('inlineOzonApiKey').hidden = false;
     $('inlineOzonClientId').disabled = false;
@@ -1439,7 +1463,7 @@
     $('viewOzonApiKey').hidden = true;
     $('inlineOzonClientId').value = currentStore.clientId || '';
     $('inlineOzonApiKey').value = currentStore.apiKey || '';
-    setOzonAuthHighlight(!!withHighlight);
+    syncOzonAuthChrome();
     $('inlineOzonClientId').focus();
   }
 
@@ -1463,6 +1487,7 @@
     var oldAuthExpire = currentStore.authExpire || '—';
     currentStore.clientId = clientId;
     currentStore.apiKey = apiKey;
+    currentStore.ozonAuthEdited = true;
     applyOzonAuthFromTokens(currentStore);
 
     var changes = [];
