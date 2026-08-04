@@ -632,6 +632,7 @@ window.STORE_DATA = [
     registrationCompany: '云易盒科技有限公司',
     clientId: '248861',
     apiKey: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    ozonAuthEdited: true,
     hasDeposit: false,
     depositRefundStatus: '无需退回',
     remarks: 'Ozon 店铺通过 Client ID / API Key 维护授权。',
