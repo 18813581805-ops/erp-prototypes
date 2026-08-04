@@ -364,11 +364,6 @@ th.col-alias{z-index:4;background:#fafafa!important}
 .token-label{font-size:13px;color:var(--muted);text-align:right}
 .token-value{font-size:13px;color:var(--text);word-break:break-all}
 .token-hint{margin:0 0 10px;font-size:12px;color:var(--subtle)}
-.token-field-note{margin:8px 0 0;font-size:12px;color:var(--subtle);line-height:1.6}
-.ozon-auth-form{display:flex;flex-direction:column;gap:16px;padding-top:4px}
-.ozon-auth-field{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:start}
-.ozon-auth-label{padding-top:8px;font-size:13px;color:var(--muted);text-align:right}
-.ozon-auth-control{min-width:0}
 .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0 14px}
 .form-wide{grid-column:1/-1}
 .textarea{height:76px;padding-top:8px;resize:vertical}
