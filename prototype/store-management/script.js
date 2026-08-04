@@ -27,6 +27,14 @@
   var TEMU_ACCESS_TOKEN_MAX = 128;
   var TEMU_APP_KEY_MAX = 64;
   var TEMU_APP_SECRET_MAX = 64;
+  var TEMU_TOKEN_INPUT_IDS = {
+    editOrderAccessToken: TEMU_ACCESS_TOKEN_MAX,
+    editOrderAppKey: TEMU_APP_KEY_MAX,
+    editOrderAppSecret: TEMU_APP_SECRET_MAX,
+    editProductAccessToken: TEMU_ACCESS_TOKEN_MAX,
+    editProductAppKey: TEMU_APP_KEY_MAX,
+    editProductAppSecret: TEMU_APP_SECRET_MAX
+  };
 
   function $(id) {
     return document.getElementById(id);
@@ -1611,6 +1619,7 @@
     $('btnEditBiz').addEventListener('click', function(){ if (currentStore) openEditBiz(currentStore, 'detail'); });
     $('btnTemuAuthEdit').addEventListener('click', function(){ enterTemuAuthEdit(false); });
     $('btnTemuAuthSave').addEventListener('click', saveTemuAuthInline);
+    bindTemuAuthInputLimits();
     $('btnOzonAuthEdit').addEventListener('click', function(){ enterOzonAuthEdit(false); });
     $('btnOzonAuthSave').addEventListener('click', saveOzonAuthInline);
     $('btnBatchDownloadPayment').addEventListener('click', downloadSelectedPaymentInfo);
@@ -2006,14 +2015,16 @@
     temuAuthHighlight = !!withHighlight && shouldShowTemuAuthTip(currentStore);
     authOrderTokenRegion = 'us';
     editOrderTokenDraft = {
-      us: Object.assign({}, currentStore.orderPullTokens.us),
-      eu: Object.assign({}, currentStore.orderPullTokens.eu),
-      global: Object.assign({}, currentStore.orderPullTokens.global)
+      us: clampTemuTokenTriplet(currentStore.orderPullTokens.us),
+      eu: clampTemuTokenTriplet(currentStore.orderPullTokens.eu),
+      global: clampTemuTokenTriplet(currentStore.orderPullTokens.global)
     };
     fillOrderTokenInputs(editOrderTokenDraft.us);
-    $('editProductAccessToken').value = currentStore.productPullToken.accessToken || '';
-    $('editProductAppKey').value = currentStore.productPullToken.appKey || '';
-    $('editProductAppSecret').value = currentStore.productPullToken.appSecret || '';
+    var product = clampTemuTokenTriplet(currentStore.productPullToken);
+    applyTemuInputMaxAttributes();
+    $('editProductAccessToken').value = product.accessToken || '';
+    $('editProductAppKey').value = product.appKey || '';
+    $('editProductAppSecret').value = product.appSecret || '';
     setTokenRegionTabs('authOrderTokenTabs', authOrderTokenRegion);
     syncTemuAuthChrome();
     $('editOrderAccessToken').focus();
@@ -2049,10 +2060,15 @@
       eu: Object.assign({}, editOrderTokenDraft.eu),
       global: Object.assign({}, editOrderTokenDraft.global)
     };
-    var nextProduct = {
+    var nextProduct = clampTemuTokenTriplet({
       accessToken: value('editProductAccessToken'),
       appKey: value('editProductAppKey'),
       appSecret: value('editProductAppSecret')
+    });
+    nextOrder = {
+      us: clampTemuTokenTriplet(nextOrder.us),
+      eu: clampTemuTokenTriplet(nextOrder.eu),
+      global: clampTemuTokenTriplet(nextOrder.global)
     };
 
     var lengthError = validateTemuTokenTripletLengths(nextOrder.us, '美区订单') ||
@@ -2101,6 +2117,50 @@
     toast(storeHasTemuTokens(currentStore) ? '授权信息保存成功，已更新授权状态' : '授权信息已保存（未填写 Token，保持未授权）');
   }
 
+  function clampTemuField(value, max) {
+    value = value == null ? '' : String(value);
+    return value.length > max ? value.slice(0, max) : value;
+  }
+
+  function clampTemuTokenTriplet(token) {
+    token = token || emptyTokenTriplet();
+    return {
+      accessToken: clampTemuField(token.accessToken, TEMU_ACCESS_TOKEN_MAX),
+      appKey: clampTemuField(token.appKey, TEMU_APP_KEY_MAX),
+      appSecret: clampTemuField(token.appSecret, TEMU_APP_SECRET_MAX)
+    };
+  }
+
+  function applyTemuInputMaxAttributes() {
+    Object.keys(TEMU_TOKEN_INPUT_IDS).forEach(function(id) {
+      var el = $(id);
+      if (!el) return;
+      el.setAttribute('maxlength', String(TEMU_TOKEN_INPUT_IDS[id]));
+    });
+  }
+
+  function bindTemuAuthInputLimits() {
+    applyTemuInputMaxAttributes();
+    Object.keys(TEMU_TOKEN_INPUT_IDS).forEach(function(id) {
+      var el = $(id);
+      if (!el || el.dataset.lengthBound === '1') return;
+      el.dataset.lengthBound = '1';
+      var max = TEMU_TOKEN_INPUT_IDS[id];
+      var label = id.indexOf('AccessToken') >= 0 ? 'access_token' : (id.indexOf('AppKey') >= 0 ? 'App Key' : 'App Secret');
+      function enforce() {
+        var raw = el.value || '';
+        if (raw.length <= max) return;
+        el.value = raw.slice(0, max);
+        toast(label + ' 最长 ' + max + ' 位', 'error');
+      }
+      el.addEventListener('input', enforce);
+      el.addEventListener('paste', function() {
+        setTimeout(enforce, 0);
+      });
+      el.addEventListener('change', enforce);
+    });
+  }
+
   function validateTemuTokenTripletLengths(token, label) {
     token = token || emptyTokenTriplet();
     if ((token.accessToken || '').length > TEMU_ACCESS_TOKEN_MAX) {
@@ -2116,15 +2176,16 @@
   }
 
   function readOrderTokenInputs() {
-    return {
+    return clampTemuTokenTriplet({
       accessToken: value('editOrderAccessToken'),
       appKey: value('editOrderAppKey'),
       appSecret: value('editOrderAppSecret')
-    };
+    });
   }
 
   function fillOrderTokenInputs(token) {
-    token = token || emptyTokenTriplet();
+    token = clampTemuTokenTriplet(token || emptyTokenTriplet());
+    applyTemuInputMaxAttributes();
     $('editOrderAccessToken').value = token.accessToken || '';
     $('editOrderAppKey').value = token.appKey || '';
     $('editOrderAppSecret').value = token.appSecret || '';
