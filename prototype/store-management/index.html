@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>店铺管理 · 跨境电商 ERP</title>
   <link rel="stylesheet" href="../../ui-library/tokens.css" />
-  <link rel="stylesheet" href="styles.css?v=202608041610" />
+  <link rel="stylesheet" href="styles.css?v=202608041630" />
 </head>
 <body>
 <div class="erp-shell">
@@ -405,11 +405,7 @@
 
       <!-- 授权信息 -->
       <div class="tab-content" id="tabAuth" hidden>
-        <div class="tab-toolbar" id="authTemuToolbar" hidden>
-          <button class="btn primary" id="btnEditTemuAuth" type="button">编辑授权信息</button>
-        </div>
-
-        <!-- 非 Ozon：通用店铺授权摘要 -->
+        <!-- 非 Temu/Ozon：通用店铺授权摘要 -->
         <div class="card" id="genericAuthCard">
           <div class="card-title">店铺授权</div>
           <div class="desc-grid">
@@ -459,25 +455,74 @@
           </div>
         </div>
 
-        <div class="card" id="temuTokenCard" hidden>
-          <div class="card-title">订单拉取 Token 信息</div>
+        <!-- Temu：内联授权编辑（字段同原抽屉，交互同 Ozon） -->
+        <div class="card" id="temuAuthCard" hidden>
+          <div class="card-title-bar">
+            <div class="card-title" style="margin:0;border:none;padding:0;">店铺授权</div>
+            <div class="temu-auth-icons">
+              <button type="button" class="icon-btn ozon-edit" id="btnTemuAuthEdit" title="编辑授权信息">✎</button>
+              <button type="button" class="icon-btn primary" id="btnTemuAuthSave" title="保存" hidden>✓</button>
+            </div>
+          </div>
+          <div class="temu-auth-tip" id="temuAuthTip" hidden>
+            请编辑并完善 <strong>订单拉取</strong>、<strong>商品拉取</strong> Token 信息完成授权（非必填，可稍后填写）
+          </div>
+          <div class="desc-grid temu-auth-meta" style="margin-top:12px;">
+            <div class="desc-item"><span class="desc-label">授权状态</span><span id="temuAuthStatus" class="tag tag-green">—</span></div>
+            <div class="desc-item"><span class="desc-label">过期时间</span><span class="desc-value" id="temuAuthExpire">—</span></div>
+            <div class="desc-item"><span class="desc-label">授权时间</span><span class="desc-value" id="temuAuthTime">—</span></div>
+            <div class="desc-item"><span class="desc-label">剩余天数</span><span class="desc-value" id="temuAuthRemain">—</span></div>
+            <div class="desc-item"><span class="desc-label">主账号信息</span><span class="desc-value" id="temuAuthMainAccount">—</span></div>
+          </div>
+
+          <div class="card-title" style="margin-top:20px;">订单拉取 Token 信息</div>
           <div class="token-region-tabs" id="authOrderTokenTabs">
             <button type="button" class="token-region-tab active" data-region="us">美区</button>
             <button type="button" class="token-region-tab" data-region="eu">欧区</button>
             <button type="button" class="token-region-tab" data-region="global">全球</button>
           </div>
-          <div class="token-panel" id="authOrderTokenPanel">
+          <div class="token-panel" id="authOrderTokenPanelView">
             <div class="token-form-row"><span class="token-label">access_token:</span><span class="token-value" id="authOrderAccessToken">—</span></div>
             <div class="token-form-row"><span class="token-label">App Key:</span><span class="token-value" id="authOrderAppKey">—</span></div>
             <div class="token-form-row"><span class="token-label">App Secret:</span><span class="token-value" id="authOrderAppSecret">—</span></div>
           </div>
+          <div class="token-panel token-panel-edit" id="authOrderTokenPanelEdit" hidden>
+            <div class="token-form-row">
+              <label class="token-label" for="editOrderAccessToken">access_token:</label>
+              <input class="form-input temu-auth-input" id="editOrderAccessToken" placeholder="accessToken" />
+            </div>
+            <div class="token-form-row">
+              <label class="token-label" for="editOrderAppKey">App Key:</label>
+              <input class="form-input temu-auth-input" id="editOrderAppKey" placeholder="appKey" />
+            </div>
+            <div class="token-form-row">
+              <label class="token-label" for="editOrderAppSecret">App Secret:</label>
+              <input class="form-input temu-auth-input" id="editOrderAppSecret" placeholder="appSecret" />
+            </div>
+          </div>
+
           <div class="card-title" style="margin-top:20px;">商品拉取 Token 信息</div>
           <p class="token-hint">平台限制，token按照店铺维度，不用区分地区</p>
-          <div class="token-panel">
+          <div class="token-panel" id="authProductTokenPanelView">
             <div class="token-form-row"><span class="token-label">access_token:</span><span class="token-value" id="authProductAccessToken">—</span></div>
             <div class="token-form-row"><span class="token-label">App Key:</span><span class="token-value" id="authProductAppKey">—</span></div>
             <div class="token-form-row"><span class="token-label">App Secret:</span><span class="token-value" id="authProductAppSecret">—</span></div>
           </div>
+          <div class="token-panel token-panel-edit" id="authProductTokenPanelEdit" hidden>
+            <div class="token-form-row">
+              <label class="token-label" for="editProductAccessToken">access_token:</label>
+              <input class="form-input temu-auth-input" id="editProductAccessToken" placeholder="accessToken" />
+            </div>
+            <div class="token-form-row">
+              <label class="token-label" for="editProductAppKey">App Key:</label>
+              <input class="form-input temu-auth-input" id="editProductAppKey" placeholder="appKey" />
+            </div>
+            <div class="token-form-row">
+              <label class="token-label" for="editProductAppSecret">App Secret:</label>
+              <input class="form-input temu-auth-input" id="editProductAppSecret" placeholder="appSecret" />
+            </div>
+          </div>
+          <p class="form-help" style="margin-top:12px;">订单拉取、商品拉取 Token 信息均为非必填；保存后将据此更新授权状态与有效期。</p>
         </div>
         <div class="card" id="mainAccountCard" hidden>
           <div class="card-title">同一主账号下其他店铺</div>
@@ -656,60 +701,6 @@
   </div>
 </div>
 
-<!-- ============ Temu 编辑授权信息 ============ -->
-<div class="drawer-overlay" id="drawerEditTemuAuth" hidden>
-  <div class="drawer" style="width:640px;">
-    <div class="drawer-header">
-      <h3>编辑授权信息</h3>
-      <button class="drawer-close" id="btnCloseEditTemuAuth">✕</button>
-    </div>
-    <div class="drawer-body">
-      <div class="form-section-title">订单拉取 Token 信息</div>
-      <div class="token-region-tabs" id="editOrderTokenTabs">
-        <button type="button" class="token-region-tab active" data-region="us">美区</button>
-        <button type="button" class="token-region-tab" data-region="eu">欧区</button>
-        <button type="button" class="token-region-tab" data-region="global">全球</button>
-      </div>
-      <div class="token-panel token-panel-edit" id="editOrderTokenPanel">
-        <div class="token-form-row">
-          <label class="token-label" for="editOrderAccessToken">access_token:</label>
-          <input class="form-input" id="editOrderAccessToken" placeholder="accessToken" />
-        </div>
-        <div class="token-form-row">
-          <label class="token-label" for="editOrderAppKey">App Key:</label>
-          <input class="form-input" id="editOrderAppKey" placeholder="appKey" />
-        </div>
-        <div class="token-form-row">
-          <label class="token-label" for="editOrderAppSecret">App Secret:</label>
-          <input class="form-input" id="editOrderAppSecret" placeholder="appSecret" />
-        </div>
-      </div>
-
-      <div class="form-section-title" style="margin-top:20px;">商品拉取 Token 信息</div>
-      <p class="token-hint">平台限制，token按照店铺维度，不用区分地区</p>
-      <div class="token-panel token-panel-edit">
-        <div class="token-form-row">
-          <label class="token-label" for="editProductAccessToken">access_token:</label>
-          <input class="form-input" id="editProductAccessToken" placeholder="accessToken" />
-        </div>
-        <div class="token-form-row">
-          <label class="token-label" for="editProductAppKey">App Key:</label>
-          <input class="form-input" id="editProductAppKey" placeholder="appKey" />
-        </div>
-        <div class="token-form-row">
-          <label class="token-label" for="editProductAppSecret">App Secret:</label>
-          <input class="form-input" id="editProductAppSecret" placeholder="appSecret" />
-        </div>
-      </div>
-      <p class="form-help">订单拉取、商品拉取 Token 信息均为非必填；保存后将据此更新授权状态与有效期。</p>
-    </div>
-    <div class="drawer-footer">
-      <button class="btn" id="btnCancelEditTemuAuth" type="button">取消</button>
-      <button class="btn primary" id="btnSaveEditTemuAuth" type="button">保存并关闭</button>
-    </div>
-  </div>
-</div>
-
 <!-- ============ 店铺授权确认弹窗 ============ -->
 <div class="modal-overlay" id="modalReAuth" hidden>
   <div class="modal" style="width:440px;">
@@ -734,7 +725,7 @@
   </div>
 </div>
 
-<script src="data.js?v=202608041610"></script>
-<script src="script.js?v=202608041610"></script>
+<script src="data.js?v=202608041630"></script>
+<script src="script.js?v=202608041630"></script>
 </body>
 </html>
