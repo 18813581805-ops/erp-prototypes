@@ -383,14 +383,6 @@
     }).join('、');
   }
 
-  function displayListRegion(store) {
-    if (store.platform === 'Amazon') return store.region || '—';
-    if (isTemuPlatform(store.platform)) {
-      return temuOrderRegionsText(store) || store.region || '—';
-    }
-    return '—';
-  }
-
   function renderTable() {
     applyFilters();
     var tbody = $('storeTableBody');
@@ -420,7 +412,8 @@
       rows += '<td class="col-alias">' + (s.alias || '—') + '</td>';
       rows += '<td class="col-body" title="' + (s.body || '—') + '">' + (s.body || '—') + '</td>';
       rows += '<td class="col-site">' + tagHtml(s.site) + '</td>';
-      rows += '<td class="col-region platform-col platform-region">' + displayListRegion(s) + '</td>';
+      rows += '<td class="col-region platform-col platform-amazon">' + (s.platform === 'Amazon' ? (s.region || '—') : '—') + '</td>';
+      rows += '<td class="col-region platform-col platform-temu">' + (isTemuPlatform(s.platform) ? (temuOrderRegionsText(s) || '—') : '—') + '</td>';
       rows += '<td class="col-type">' + displayStoreType(s.storeType) + '</td>';
       rows += '<td class="col-platform-type">' + (s.platformStoreType || '—') + '</td>';
       rows += '<td class="col-sub platform-col platform-shopee">' + (s.platform === 'Shopee' ? (s.subName || '—') : '—') + '</td>';
@@ -450,11 +443,11 @@
     var showShopee = activePlatform === 'Shopee';
     var showAmazon = activePlatform === 'Amazon';
     var showTiktok = activePlatform === 'TikTok Shop';
-    var showRegion = activePlatform === 'Amazon' || activePlatform === 'Temu';
+    var showTemu = activePlatform === 'Temu';
     document.querySelectorAll('.platform-shopee').forEach(function(el){ el.classList.toggle('is-hidden-col', !showShopee); });
     document.querySelectorAll('.platform-amazon').forEach(function(el){ el.classList.toggle('is-hidden-col', !showAmazon); });
     document.querySelectorAll('.platform-tiktok').forEach(function(el){ el.classList.toggle('is-hidden-col', !showTiktok); });
-    document.querySelectorAll('.platform-region').forEach(function(el){ el.classList.toggle('is-hidden-col', !showRegion); });
+    document.querySelectorAll('.platform-temu').forEach(function(el){ el.classList.toggle('is-hidden-col', !showTemu); });
   }
 
   function bindTabs() {
