@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>店铺管理 · 跨境电商 ERP</title>
   <link rel="stylesheet" href="../../ui-library/tokens.css" />
-  <link rel="stylesheet" href="styles.css?v=202608041850" />
+  <link rel="stylesheet" href="styles.css?v=202608041920" />
 </head>
 <body>
 <div class="erp-shell">
@@ -524,6 +524,38 @@
           </div>
           <p class="form-help" style="margin-top:12px;">订单拉取、商品拉取 Token 信息均为非必填；保存后将据此更新授权状态与有效期。</p>
         </div>
+
+        <!-- 阿里系（1688/淘宝/天猫）：内联授权编辑，交互同 Temu -->
+        <div class="card" id="alibabaAuthCard" hidden>
+          <div class="card-title-bar">
+            <div class="card-title" style="margin:0;border:none;padding:0;">店铺授权</div>
+            <div class="alibaba-auth-icons">
+              <button type="button" class="icon-btn ozon-edit" id="btnAlibabaAuthEdit" title="编辑授权信息">✎</button>
+              <button type="button" class="icon-btn primary" id="btnAlibabaAuthSave" title="保存" hidden>✓</button>
+            </div>
+          </div>
+          <div class="alibaba-auth-tip" id="alibabaAuthTip" hidden>
+            请编辑并完善 <strong>access Token</strong> 完成授权（必填）
+          </div>
+          <div class="desc-grid alibaba-auth-meta" style="margin-top:12px;">
+            <div class="desc-item"><span class="desc-label">授权状态</span><span id="alibabaAuthStatus" class="tag tag-green">—</span></div>
+            <div class="desc-item"><span class="desc-label">过期时间</span><span class="desc-value" id="alibabaAuthExpire">—</span></div>
+            <div class="desc-item"><span class="desc-label">授权时间</span><span class="desc-value" id="alibabaAuthTime">—</span></div>
+            <div class="desc-item"><span class="desc-label">剩余天数</span><span class="desc-value" id="alibabaAuthRemain">—</span></div>
+            <div class="desc-item"><span class="desc-label">主账号信息</span><span class="desc-value" id="alibabaAuthMainAccount">—</span></div>
+          </div>
+          <div class="ozon-cred-block" id="alibabaCredBlock">
+            <div class="ozon-field-row">
+              <label class="ozon-field-label" for="inlineAlibabaAccessToken">access Token:</label>
+              <div class="ozon-field-control">
+                <input class="form-input alibaba-auth-input" id="inlineAlibabaAccessToken" placeholder="请输入 access Token" maxlength="128" disabled />
+                <span class="ozon-view-value" id="viewAlibabaAccessToken" hidden>—</span>
+                <p class="token-field-note">注：账号授权后，数据会自动拉取，一般需要几十分钟到几小时不等。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="card" id="mainAccountCard" hidden>
           <div class="card-title">同一主账号下其他店铺</div>
           <div id="relatedStores" class="related-list"></div>
@@ -725,7 +757,7 @@
   </div>
 </div>
 
-<script src="data.js?v=202608041850"></script>
-<script src="script.js?v=202608041850"></script>
+<script src="data.js?v=202608041920"></script>
+<script src="script.js?v=202608041920"></script>
 </body>
 </html>
