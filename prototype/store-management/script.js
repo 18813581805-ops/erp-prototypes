@@ -15,7 +15,6 @@
   var paymentPlatformOptions = ['PingPong', 'WorldFirst', '连连支付'];
   var creatingBasicStore = false;
   var temuAuthOrigin = 'detail';
-  var ozonAuthOrigin = 'detail';
   var editOrderTokenRegion = 'us';
   var authOrderTokenRegion = 'us';
   var editOrderTokenDraft = null;
@@ -180,70 +179,9 @@
     return platform === 'Temu';
   }
 
-  function isOzonPlatform(platform) {
-    return platform === 'Ozon';
-  }
-
-  function ensureOzonAuth(store) {
-    if (!('clientId' in store) || store.clientId == null) store.clientId = '';
-    if (!('apiKey' in store) || store.apiKey == null) store.apiKey = '';
-  }
-
-  function storeHasOzonAuth(store) {
-    ensureOzonAuth(store);
-    return !!(store.clientId || store.apiKey);
-  }
-
-  function applyOzonAuthFromTokens(store) {
-    var mainAccountId = store.mainAccountId;
-    if (storeHasOzonAuth(store)) {
-      store.authStatus = '已授权';
-      store.authTime = formatNow();
-      store.authExpire = nextYear();
-      store.syncOrderTime = formatNow();
-    } else {
-      store.authStatus = '未授权';
-      store.authTime = '—';
-      store.authExpire = '—';
-    }
-    store.mainAccountId = mainAccountId;
-  }
-
-  function ensureOperationLogs(store) {
-    if (!store.operationLogs) {
-      store.operationLogs = [
-        { time: '2026-05-19 14:30', operator: 'Freddy', module: '授权', type: '验证', content: '完成店铺授权校验' },
-        { time: '2026-05-19 10:00', operator: 'Freddy', module: '基础资料', type: '新增', content: '创建店铺记录' }
-      ];
-    }
-  }
-
-  function pushOperationLog(store, module, type, content) {
-    ensureOperationLogs(store);
-    store.operationLogs.unshift({
-      time: formatNow(),
-      operator: 'Freddy',
-      module: module,
-      type: type,
-      content: content
-    });
-  }
-
-  function formatLogValue(value) {
-    return value ? String(value) : '（空）';
-  }
-
   function syncStoreTypeOptions(platform, currentValue) {
     var select = $('editStoreType');
-    var group = $('editStoreTypeGroup');
     if (!select) return;
-    var ozon = isOzonPlatform(platform);
-    if (group) group.hidden = ozon;
-    if (ozon) {
-      select.value = '';
-      syncSelect('editStoreType');
-      return;
-    }
     var temu = isTemuPlatform(platform);
     var options = temu
       ? [['', '请选择店铺类型'], ['全托管', '全托管'], ['半托管', '半托管']]
@@ -284,8 +222,6 @@
     store.body = store.registrationCompany;
     if (!('adSyncSetting' in store)) store.adSyncSetting = null;
     if (isTemuPlatform(store.platform)) ensureTemuTokens(store);
-    if (isOzonPlatform(store.platform)) ensureOzonAuth(store);
-    ensureOperationLogs(store);
     (store.paymentAccounts || []).forEach(function(account) {
       if (account.platform && paymentPlatformOptions.indexOf(account.platform) === -1) paymentPlatformOptions.push(account.platform);
     });
@@ -433,7 +369,7 @@
   }
 
   function isNamedPlatformTab(platform) {
-    return ['Amazon', 'Shopee', 'AliExpress', 'Lazada', 'TikTok Shop', 'Temu', 'Ozon'].indexOf(platform) >= 0;
+    return ['Amazon', 'Shopee', 'AliExpress', 'Lazada', 'TikTok Shop', 'Temu'].indexOf(platform) >= 0;
   }
 
   function authOptionsForPlatform(platform) {
@@ -549,10 +485,6 @@
 
     if (authType === 'store' && isTemuPlatform(platform)) {
       openEditTemuAuth(store, 'table');
-      return;
-    }
-    if (authType === 'store' && isOzonPlatform(platform)) {
-      openEditOzonAuth(store, 'table');
       return;
     }
 
@@ -967,7 +899,7 @@
   }
 
   function platformRequiresManualShopMeta(platform) {
-    return ['Amazon', 'AliExpress', 'Temu', 'Ozon'].indexOf(platform) >= 0;
+    return ['Amazon', 'AliExpress', 'Temu'].indexOf(platform) >= 0;
   }
 
   function updateCreatePlatformFields() {
@@ -1312,7 +1244,6 @@
     $('basicEmail').textContent = store.storeEmail || '—';
     $('basicSite').textContent = store.site || '—';
     $('basicType').textContent = displayStoreType(store.storeType);
-    $('basicTypeItem').hidden = isOzonPlatform(store.platform);
     $('basicMainAcct').textContent = store.mainAccountId || '否';
     $('basicSip').textContent = store.isSip ? '是' : '否';
     $('basicAdAccountId').textContent = store.platform === 'TikTok Shop' ? (store.adAccountId || '—') : '—';
@@ -1354,45 +1285,17 @@
     $('authRemain').textContent = remainDays(store.authExpire);
 
     var isTemu = isTemuPlatform(store.platform);
-    var isOzon = isOzonPlatform(store.platform);
     $('authTemuToolbar').hidden = !isTemu;
     $('temuTokenCard').hidden = !isTemu;
-    $('authOzonToolbar').hidden = !isOzon;
-    $('ozonAuthCard').hidden = !isOzon;
     if (isTemu) {
       authOrderTokenRegion = 'us';
       renderAuthOrderTokenRegion(store, authOrderTokenRegion);
       renderAuthProductToken(store);
       setTokenRegionTabs('authOrderTokenTabs', authOrderTokenRegion);
     }
-    if (isOzon) {
-      ensureOzonAuth(store);
-      $('authOzonClientId').textContent = maskToken(store.clientId);
-      $('authOzonApiKey').textContent = maskToken(store.apiKey);
-    }
 
     renderRelatedStores(store);
-    renderOperationLogs(store);
     activateDetailTab('basic');
-  }
-
-  function renderOperationLogs(store) {
-    ensureOperationLogs(store);
-    var body = $('operationLogBody');
-    if (!body) return;
-    if (!store.operationLogs.length) {
-      body.innerHTML = '<tr><td colspan="5" class="empty-cell">暂无操作日志</td></tr>';
-      return;
-    }
-    body.innerHTML = store.operationLogs.map(function(log) {
-      return '<tr>' +
-        '<td>' + escapeHtml(log.time || '—') + '</td>' +
-        '<td>' + escapeHtml(log.operator || '—') + '</td>' +
-        '<td>' + escapeHtml(log.module || '—') + '</td>' +
-        '<td>' + escapeHtml(log.type || '—') + '</td>' +
-        '<td>' + escapeHtml(log.content || '—') + '</td>' +
-      '</tr>';
-    }).join('');
   }
 
   function setTokenRegionTabs(containerId, region) {
@@ -1465,7 +1368,6 @@
     $('btnEditBasic').addEventListener('click', function(){ if (currentStore) openEditBasic(currentStore, 'detail'); });
     $('btnEditBiz').addEventListener('click', function(){ if (currentStore) openEditBiz(currentStore, 'detail'); });
     $('btnEditTemuAuth').addEventListener('click', function(){ if (currentStore) openEditTemuAuth(currentStore, 'detail'); });
-    $('btnEditOzonAuth').addEventListener('click', function(){ if (currentStore) openEditOzonAuth(currentStore, 'detail'); });
     $('btnBatchDownloadPayment').addEventListener('click', downloadSelectedPaymentInfo);
     $('authOrderTokenTabs').addEventListener('click', function(e) {
       var tab = e.target.closest('.token-region-tab');
@@ -1582,7 +1484,7 @@
         toast('请选择站点', 'error');
         return;
       }
-      if (!isOzonPlatform(platform) && !value('editStoreType')) {
+      if (!value('editStoreType')) {
         toast('请选择店铺类型', 'error');
         return;
       }
@@ -1626,7 +1528,7 @@
       currentStore.bcId = value('editBcId');
       currentStore.platformShopId = value('editShopId');
       currentStore.platformShopName = value('editShopName');
-      currentStore.storeType = isOzonPlatform(platform) ? '' : value('editStoreType');
+      currentStore.storeType = value('editStoreType');
       currentStore.browserName = value('editBrowserName');
       currentStore.browserStoreName = value('editBrowserStore');
       currentStore.accountType = value('editAccountType');
@@ -1772,16 +1674,13 @@
       renderTable();
       var savedOrigin = editOrigin;
       var needTemuAuth = savedOrigin === 'create' && isTemuPlatform(currentStore.platform);
-      var needOzonAuth = savedOrigin === 'create' && isOzonPlatform(currentStore.platform);
-      if (savedOrigin === 'detail' || needTemuAuth || needOzonAuth || savedOrigin === 'create') {
+      if (savedOrigin === 'detail' || needTemuAuth || savedOrigin === 'create') {
         openDetail(currentStore);
-        activateDetailTab((needTemuAuth || needOzonAuth) ? 'auth' : 'biz');
+        activateDetailTab(needTemuAuth ? 'auth' : 'biz');
       }
       toast('业务信息保存成功');
       if (needTemuAuth) {
         openEditTemuAuth(currentStore, 'create');
-      } else if (needOzonAuth) {
-        openEditOzonAuth(currentStore, 'create');
       }
     });
   }
@@ -1858,70 +1757,6 @@
       openDetail(currentStore);
       activateDetailTab('auth');
       toast(storeHasTemuTokens(currentStore) ? '授权信息保存成功，已更新授权状态' : '授权信息已保存（未填写 Token，保持未授权）');
-    });
-  }
-
-  function openEditOzonAuth(store, origin) {
-    normalizeStore(store);
-    ensureOzonAuth(store);
-    currentStore = store;
-    ozonAuthOrigin = origin || 'detail';
-    $('editOzonClientId').value = store.clientId || '';
-    $('editOzonApiKey').value = store.apiKey || '';
-    $('drawerEditOzonAuth').hidden = false;
-  }
-
-  function bindEditOzonAuth() {
-    ['btnCloseEditOzonAuth', 'btnCancelEditOzonAuth'].forEach(function(id) {
-      $(id).addEventListener('click', function() {
-        $('drawerEditOzonAuth').hidden = true;
-        if (ozonAuthOrigin === 'create' && currentStore) {
-          openDetail(currentStore);
-          activateDetailTab('auth');
-        }
-      });
-    });
-    $('btnSaveEditOzonAuth').addEventListener('click', function() {
-      if (!currentStore || !isOzonPlatform(currentStore.platform)) return;
-      ensureOzonAuth(currentStore);
-      var oldClientId = currentStore.clientId || '';
-      var oldApiKey = currentStore.apiKey || '';
-      var oldAuthStatus = currentStore.authStatus || '未授权';
-      var oldAuthTime = currentStore.authTime || '—';
-      var oldAuthExpire = currentStore.authExpire || '—';
-      var newClientId = value('editOzonClientId');
-      var newApiKey = value('editOzonApiKey');
-      currentStore.clientId = newClientId;
-      currentStore.apiKey = newApiKey;
-      applyOzonAuthFromTokens(currentStore);
-
-      var changes = [];
-      if (oldClientId !== newClientId) {
-        changes.push('Client ID：' + formatLogValue(oldClientId) + ' → ' + formatLogValue(newClientId));
-      }
-      if (oldApiKey !== newApiKey) {
-        changes.push('API Key：' + formatLogValue(oldApiKey) + ' → ' + formatLogValue(newApiKey));
-      }
-      if (oldAuthStatus !== currentStore.authStatus) {
-        changes.push('授权状态：' + formatLogValue(oldAuthStatus) + ' → ' + formatLogValue(currentStore.authStatus));
-      }
-      if (oldAuthTime !== (currentStore.authTime || '—')) {
-        changes.push('授权时间：' + formatLogValue(oldAuthTime) + ' → ' + formatLogValue(currentStore.authTime));
-      }
-      if (oldAuthExpire !== (currentStore.authExpire || '—')) {
-        changes.push('过期时间：' + formatLogValue(oldAuthExpire) + ' → ' + formatLogValue(currentStore.authExpire));
-      }
-      if (changes.length) {
-        pushOperationLog(currentStore, '授权', '编辑', changes.join('；'));
-      } else {
-        pushOperationLog(currentStore, '授权', '编辑', '授权信息保存，字段无变更');
-      }
-
-      $('drawerEditOzonAuth').hidden = true;
-      renderTable();
-      openDetail(currentStore);
-      activateDetailTab('auth');
-      toast(storeHasOzonAuth(currentStore) ? '授权信息保存成功，已更新授权状态' : '授权信息已保存（未填写凭证，保持未授权）');
     });
   }
 
@@ -2079,7 +1914,6 @@
     bindEditBasic();
     bindEditBiz();
     bindEditTemuAuth();
-    bindEditOzonAuth();
     bindAdSync();
     bindPostAuthPermission();
     bindDrawerBlankClose();
