@@ -447,6 +447,7 @@ window.STORE_DATA = [
       appKey: 'product_app_key_demo',
       appSecret: 'product_app_secret_demo'
     },
+    temuAuthEdited: true,
     paymentAccounts: [
       { platform: 'PingPong', account: '**** **** 5566', accountRaw: 'pingpong-temu-5566@yiyihe.com', accountId: 'PP-TEMU-5566', currency: 'USD' }
     ],
