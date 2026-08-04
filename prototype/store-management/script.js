@@ -372,6 +372,25 @@
     });
   }
 
+  function temuOrderRegionsText(store) {
+    if (!store || !isTemuPlatform(store.platform)) return '';
+    ensureTemuTokens(store);
+    var labels = { us: '美区', eu: '欧区', global: '全球' };
+    return ['us', 'eu', 'global'].filter(function(region) {
+      return tokenTripletHasValue(store.orderPullTokens[region]);
+    }).map(function(region) {
+      return labels[region];
+    }).join('、');
+  }
+
+  function displayListRegion(store) {
+    if (store.platform === 'Amazon') return store.region || '—';
+    if (isTemuPlatform(store.platform)) {
+      return temuOrderRegionsText(store) || store.region || '—';
+    }
+    return '—';
+  }
+
   function renderTable() {
     applyFilters();
     var tbody = $('storeTableBody');
@@ -401,7 +420,7 @@
       rows += '<td class="col-alias">' + (s.alias || '—') + '</td>';
       rows += '<td class="col-body" title="' + (s.body || '—') + '">' + (s.body || '—') + '</td>';
       rows += '<td class="col-site">' + tagHtml(s.site) + '</td>';
-      rows += '<td class="col-region platform-col platform-amazon">' + (s.platform === 'Amazon' ? (s.region || '—') : '—') + '</td>';
+      rows += '<td class="col-region platform-col platform-region">' + displayListRegion(s) + '</td>';
       rows += '<td class="col-type">' + displayStoreType(s.storeType) + '</td>';
       rows += '<td class="col-platform-type">' + (s.platformStoreType || '—') + '</td>';
       rows += '<td class="col-sub platform-col platform-shopee">' + (s.platform === 'Shopee' ? (s.subName || '—') : '—') + '</td>';
@@ -431,9 +450,11 @@
     var showShopee = activePlatform === 'Shopee';
     var showAmazon = activePlatform === 'Amazon';
     var showTiktok = activePlatform === 'TikTok Shop';
+    var showRegion = activePlatform === 'Amazon' || activePlatform === 'Temu';
     document.querySelectorAll('.platform-shopee').forEach(function(el){ el.classList.toggle('is-hidden-col', !showShopee); });
     document.querySelectorAll('.platform-amazon').forEach(function(el){ el.classList.toggle('is-hidden-col', !showAmazon); });
     document.querySelectorAll('.platform-tiktok').forEach(function(el){ el.classList.toggle('is-hidden-col', !showTiktok); });
+    document.querySelectorAll('.platform-region').forEach(function(el){ el.classList.toggle('is-hidden-col', !showRegion); });
   }
 
   function bindTabs() {
@@ -2272,6 +2293,7 @@
     currentStore.orderPullTokens = nextOrder;
     currentStore.productPullToken = nextProduct;
     currentStore.temuAuthEdited = true;
+    currentStore.region = temuOrderRegionsText(currentStore);
     applyTemuAuthFromTokens(currentStore);
 
     var changes = [];
