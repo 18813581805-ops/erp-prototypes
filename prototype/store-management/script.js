@@ -440,7 +440,7 @@
       rows += '<td class="col-name" title="' + (s.name || '—') + '"><a href="javascript:void(0)" class="store-name-link" data-op="详情" data-id="' + s.id + '">' + (s.name || '—') + '</a></td>';
       rows += '<td class="col-alias">' + (s.alias || '—') + '</td>';
       rows += '<td class="col-body" title="' + (s.body || '—') + '">' + (s.body || '—') + '</td>';
-      rows += '<td class="col-site">' + tagHtml(s.site) + '</td>';
+      rows += '<td class="col-site col-site-field">' + (supportsSiteField(s.platform) ? tagHtml(s.site) : '') + '</td>';
       rows += '<td class="col-region platform-col platform-amazon">' + (s.platform === 'Amazon' ? (s.region || '—') : '—') + '</td>';
       rows += '<td class="col-region platform-col platform-temu">' + (isTemuPlatform(s.platform) ? (temuOrderRegionsText(s) || '—') : '—') + '</td>';
       rows += '<td class="col-type">' + displayStoreType(s.storeType) + '</td>';
@@ -475,11 +475,13 @@
     var showTiktok = activePlatform === 'TikTok Shop';
     var showTemu = activePlatform === 'Temu';
     var showMall = activePlatform === 'Shopee' || activePlatform === '全部平台';
+    var showSiteCol = activePlatform === '全部平台' || supportsSiteField(activePlatform);
     document.querySelectorAll('.platform-shopee').forEach(function(el){ el.classList.toggle('is-hidden-col', !showShopee); });
     document.querySelectorAll('.platform-amazon').forEach(function(el){ el.classList.toggle('is-hidden-col', !showAmazon); });
     document.querySelectorAll('.platform-tiktok').forEach(function(el){ el.classList.toggle('is-hidden-col', !showTiktok); });
     document.querySelectorAll('.platform-temu').forEach(function(el){ el.classList.toggle('is-hidden-col', !showTemu); });
     document.querySelectorAll('.platform-mall').forEach(function(el){ el.classList.toggle('is-hidden-col', !showMall); });
+    document.querySelectorAll('.col-site-field').forEach(function(el){ el.classList.toggle('is-hidden-col', !showSiteCol); });
   }
 
   function bindTabs() {
@@ -493,6 +495,33 @@
         renderTable();
       });
     });
+  }
+
+  function supportsSiteField(platform) {
+    return ['Amazon', 'Shopee', 'Lazada', 'TikTok Shop'].indexOf(platform) >= 0;
+  }
+
+  function syncSiteFieldVisibility(platform) {
+    var support = supportsSiteField(platform);
+    var readonlyGroup = $('editSiteReadonlyGroup');
+    var selectGroup = $('editSiteSelectGroup');
+    if (!readonlyGroup || !selectGroup) return;
+    if (!support) {
+      readonlyGroup.hidden = true;
+      selectGroup.hidden = true;
+      if ($('editSiteSelect')) {
+        $('editSiteSelect').value = '';
+        syncSelect('editSiteSelect');
+      }
+      return;
+    }
+    if (creatingBasicStore) {
+      readonlyGroup.hidden = true;
+      selectGroup.hidden = false;
+    } else {
+      selectGroup.hidden = true;
+      readonlyGroup.hidden = false;
+    }
   }
 
   function isAlibabaFamilyPlatform(platform) {
@@ -1107,6 +1136,7 @@
     });
     syncStoreTypeOptions(platform, creatingBasicStore ? value('editStoreType') : (currentStore ? currentStore.storeType : ''));
     syncIsMallField(platform, creatingBasicStore ? (value('editIsMall') || '') : (currentStore ? currentStore.isMall : ''));
+    syncSiteFieldVisibility(platform);
   }
 
   function bindCreateStore() {
@@ -1317,7 +1347,7 @@
     $('postAuthStoreList').innerHTML = pendingPermissionStores.map(function(store) {
       return '<div class="permission-store-item">' +
         '<strong>' + escapeHtml(store.alias || store.name) + '</strong>' +
-        '<span><span class="tag tag-blue">' + escapeHtml(store.platform || 'Shopee') + '</span> ' + escapeHtml(store.site || '—') + '</span>' +
+        '<span><span class="tag tag-blue">' + escapeHtml(store.platform || 'Shopee') + '</span>' + (supportsSiteField(store.platform) && store.site ? (' ' + escapeHtml(store.site)) : '') + '</span>' +
       '</div>';
     }).join('');
     document.querySelectorAll('.permission-user-check').forEach(function(input, index) {
@@ -1403,7 +1433,8 @@
     $('drawerDetail').hidden = false;
     $('detailDrawerTitle').textContent = store._draft ? '新增店铺' : '店铺详情';
     $('detailName').textContent = store.name || '—';
-    $('detailSite').textContent = store.site || '—';
+    $('detailSite').textContent = supportsSiteField(store.platform) ? (store.site || '—') : '';
+    if ($('detailSiteItem')) $('detailSiteItem').hidden = !supportsSiteField(store.platform);
     $('detailPlatform').textContent = store.platform || '—';
 
     var statusTag = $('detailStatus');
@@ -1420,7 +1451,8 @@
     $('basicShopId').textContent = store.platformShopId || '—';
     $('basicShopName').textContent = store.platformShopName || '—';
     $('basicEmail').textContent = store.storeEmail || '—';
-    $('basicSite').textContent = store.site || '—';
+    $('basicSite').textContent = supportsSiteField(store.platform) ? (store.site || '—') : '';
+    if ($('basicSiteItem')) $('basicSiteItem').hidden = !supportsSiteField(store.platform);
     $('basicType').textContent = displayStoreType(store.storeType);
     $('basicTypeItem').hidden = hidesStoreType(store.platform);
     $('basicMainAcct').textContent = store.mainAccountId || '否';
@@ -1924,8 +1956,6 @@
     $('drawerEditBasic').hidden = false;
     $('editPlatformReadonlyGroup').hidden = creatingBasicStore;
     $('editPlatformSelectGroup').hidden = !creatingBasicStore;
-    $('editSiteReadonlyGroup').hidden = creatingBasicStore;
-    $('editSiteSelectGroup').hidden = !creatingBasicStore;
     $('editPlatform').textContent = store.platform || '—';
     $('editPlatformSelect').value = creatingBasicStore ? '' : (store.platform || '');
     $('editAlias').value = store.alias || '';
@@ -1934,8 +1964,8 @@
     $('editBcId').value = store.bcId || '';
     $('editShopId').value = store.platformShopId || '';
     $('editShopName').value = store.platformShopName || '';
-    $('editSite').textContent = store.site || '—';
-    $('editSiteSelect').value = creatingBasicStore ? '' : (store.site || '');
+    $('editSite').textContent = supportsSiteField(store.platform) ? (store.site || '—') : '';
+    $('editSiteSelect').value = creatingBasicStore ? '' : (supportsSiteField(store.platform) ? (store.site || '') : '');
     document.querySelectorAll('.platform-edit-tiktok').forEach(function(el){ el.hidden = store.platform !== 'TikTok Shop'; });
     document.querySelectorAll('.platform-edit-shopee').forEach(function(el){ el.hidden = store.platform !== 'Shopee'; });
     setBrowserEnumValue(store.browserName || '');
@@ -1952,6 +1982,7 @@
     updateEditCreatePlatformFields();
     syncStoreTypeOptions(creatingBasicStore ? value('editPlatformSelect') : store.platform, store.storeType);
     syncIsMallField(creatingBasicStore ? value('editPlatformSelect') : store.platform, creatingBasicStore ? '' : store.isMall);
+    syncSiteFieldVisibility(creatingBasicStore ? value('editPlatformSelect') : store.platform);
   }
 
   function bindEditBasic() {
@@ -1962,7 +1993,10 @@
     $('btnSaveEditBasic').addEventListener('click', function() {
       if (!currentStore) return;
       var platform = creatingBasicStore ? value('editPlatformSelect') : currentStore.platform;
-      var site = creatingBasicStore ? value('editSiteSelect') : currentStore.site;
+      var site = '';
+      if (supportsSiteField(platform)) {
+        site = creatingBasicStore ? value('editSiteSelect') : (currentStore.site || '');
+      }
       if (creatingBasicStore && !platform) {
         toast('请选择电商平台', 'error');
         return;
@@ -1971,7 +2005,7 @@
         toast('店铺别名长度需为 2-50 个字符', 'error');
         return;
       }
-      if (creatingBasicStore && !site) {
+      if (creatingBasicStore && supportsSiteField(platform) && !site) {
         toast('请选择站点', 'error');
         return;
       }
