@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>店铺管理 · 跨境电商 ERP</title>
   <link rel="stylesheet" href="../../ui-library/tokens.css" />
-  <link rel="stylesheet" href="styles.css?v=1722761700" />
+  <link rel="stylesheet" href="styles.css?v=1722762000" />
 </head>
 <body>
 <div class="erp-shell">
@@ -58,14 +58,13 @@
 
     <!-- 平台 Tab -->
     <section class="platform-tabs">
-      <button class="platform-tab active">全部 (13)</button>
+      <button class="platform-tab active">全部 (12)</button>
       <button class="platform-tab">Amazon (2)</button>
       <button class="platform-tab">Shopee (4)</button>
       <button class="platform-tab">AliExpress (1)</button>
       <button class="platform-tab">Lazada</button>
       <button class="platform-tab">TikTok Shop</button>
       <button class="platform-tab">Temu (1)</button>
-      <button class="platform-tab">Ozon (1)</button>
       <button class="platform-tab">阿里系 (3)</button>
       <button class="platform-tab">其他平台 (0)</button>
     </section>
@@ -83,7 +82,7 @@
         </div>
         <div class="field">
           <label>站点</label>
-          <select class="ant-select" id="filterSite"><option>全部</option><option>MY</option><option>SG</option><option>TH</option><option>TW</option><option>ID</option><option>VN</option><option>PH</option><option>BR</option><option>US</option><option>EU</option><option>RU</option><option>CN</option></select>
+          <select class="ant-select" id="filterSite"><option>全部</option><option>MY</option><option>SG</option><option>TH</option><option>TW</option><option>ID</option><option>VN</option><option>PH</option><option>BR</option><option>US</option></select>
         </div>
         <div class="field">
           <label>店铺状态</label>
@@ -322,7 +321,7 @@
             <div class="desc-item"><span class="desc-label">后台店铺名称</span><span class="desc-value" id="basicShopName">—</span></div>
             <div class="desc-item"><span class="desc-label">店铺邮箱</span><span class="desc-value" id="basicEmail">—</span></div>
             <div class="desc-item"><span class="desc-label">站点</span><span class="desc-value" id="basicSite">—</span></div>
-            <div class="desc-item" id="basicTypeItem"><span class="desc-label">店铺类型</span><span class="desc-value" id="basicType">—</span></div>
+            <div class="desc-item"><span class="desc-label">店铺类型</span><span class="desc-value" id="basicType">—</span></div>
             <div class="desc-item platform-detail-shopee"><span class="desc-label">是否主账号授权</span><span class="desc-value" id="basicMainAcct">—</span></div>
             <div class="desc-item platform-detail-shopee"><span class="desc-label">是否SIP</span><span class="desc-value" id="basicSip">—</span></div>
             <div class="desc-item platform-detail-tiktok"><span class="desc-label">广告户 ID</span><span class="desc-value" id="basicAdAccountId">—</span></div>
@@ -408,9 +407,6 @@
         <div class="tab-toolbar" id="authTemuToolbar" hidden>
           <button class="btn primary" id="btnEditTemuAuth" type="button">编辑授权信息</button>
         </div>
-        <div class="tab-toolbar" id="authOzonToolbar" hidden>
-          <button class="btn primary" id="btnEditOzonAuth" type="button">编辑授权信息</button>
-        </div>
         <div class="card">
           <div class="card-title">店铺授权</div>
           <div class="desc-grid">
@@ -441,14 +437,6 @@
             <div class="token-form-row"><span class="token-label">App Secret:</span><span class="token-value" id="authProductAppSecret">—</span></div>
           </div>
         </div>
-        <div class="card" id="ozonAuthCard" hidden>
-          <div class="card-title">授权凭证</div>
-          <div class="token-panel">
-            <div class="token-form-row"><span class="token-label">Client ID:</span><span class="token-value" id="authOzonClientId">—</span></div>
-            <div class="token-form-row"><span class="token-label">API Key:</span><span class="token-value" id="authOzonApiKey">—</span></div>
-            <p class="token-field-note">注：账号授权后，数据会自动拉取，一般需要几十分钟到几小时不等。</p>
-          </div>
-        </div>
         <div class="card" id="mainAccountCard" hidden>
           <div class="card-title">同一主账号下其他店铺</div>
           <div id="relatedStores" class="related-list"></div>
@@ -462,7 +450,10 @@
           <thead>
             <tr><th>操作时间</th><th>操作人</th><th>模块</th><th>操作类型</th><th>变更内容</th></tr>
           </thead>
-          <tbody id="operationLogBody"></tbody>
+          <tbody>
+            <tr><td>2026-05-19 14:30</td><td>Freddy</td><td>授权</td><td>验证</td><td>完成 Shopee 主账号授权，有效期至 2027-05-19</td></tr>
+            <tr><td>2026-05-19 10:00</td><td>Freddy</td><td>基础资料</td><td>新增</td><td>创建店铺记录</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
@@ -490,7 +481,6 @@
             <option>Lazada</option>
             <option>AliExpress</option>
             <option>Temu</option>
-            <option>Ozon</option>
             <option>1688</option>
             <option>淘宝</option>
             <option>天猫</option>
@@ -516,10 +506,9 @@
             <option>PH</option>
             <option>US</option>
             <option>EU</option>
-            <option>RU</option>
           </select>
         </div>
-        <div class="form-group" id="editStoreTypeGroup"><label class="form-label required">店铺类型</label><select class="ant-select" id="editStoreType"><option value="">请选择店铺类型</option><option value="本土">本土</option><option value="全球">全球</option><option value="全托管">全托管</option><option value="半托管">半托管</option></select></div>
+        <div class="form-group"><label class="form-label required">店铺类型</label><select class="ant-select" id="editStoreType"><option value="">请选择店铺类型</option><option value="本土">本土</option><option value="全球">全球</option><option value="全托管">全托管</option><option value="半托管">半托管</option></select></div>
       </div>
       <div class="form-section-title">账号环境与注册信息</div>
       <div class="form-grid">
@@ -680,37 +669,6 @@
   </div>
 </div>
 
-<!-- ============ Ozon 编辑授权信息 ============ -->
-<div class="drawer-overlay" id="drawerEditOzonAuth" hidden>
-  <div class="drawer" style="width:560px;">
-    <div class="drawer-header">
-      <h3>编辑授权信息</h3>
-      <button class="drawer-close" id="btnCloseEditOzonAuth">✕</button>
-    </div>
-    <div class="drawer-body">
-      <div class="ozon-auth-form">
-        <div class="ozon-auth-field">
-          <label class="ozon-auth-label" for="editOzonClientId">Client ID:</label>
-          <div class="ozon-auth-control">
-            <input class="form-input" id="editOzonClientId" placeholder="请输入" />
-          </div>
-        </div>
-        <div class="ozon-auth-field">
-          <label class="ozon-auth-label" for="editOzonApiKey">API Key:</label>
-          <div class="ozon-auth-control">
-            <input class="form-input" id="editOzonApiKey" placeholder="请输入" />
-            <p class="token-field-note">注：账号授权后，数据会自动拉取，一般需要几十分钟到几小时不等。</p>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="drawer-footer">
-      <button class="btn" id="btnCancelEditOzonAuth" type="button">取消</button>
-      <button class="btn primary" id="btnSaveEditOzonAuth" type="button">保存并关闭</button>
-    </div>
-  </div>
-</div>
-
 <!-- ============ 店铺授权确认弹窗 ============ -->
 <div class="modal-overlay" id="modalReAuth" hidden>
   <div class="modal" style="width:440px;">
@@ -736,6 +694,6 @@
 </div>
 
 <script src="data.js"></script>
-<script src="script.js?v=1722760900"></script>
+<script src="script.js?v=1722762000"></script>
 </body>
 </html>
