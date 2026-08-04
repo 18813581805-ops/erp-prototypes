@@ -133,11 +133,11 @@
 
   function authSummaryHtml(store) {
     var items = [authPill('店铺', store.authStatus)];
+    if (supportsAdAuth(store.platform)) {
+      items.push(authPill('广告', store.adAuthStatus));
+    }
     if (store.platform === 'Shopee') {
-      items.push(authPill('广告', store.adAuthStatus));
       items.push(authPill('联盟', store.affiliateAuthStatus));
-    } else if (store.platform === 'TikTok Shop' || store.platform === 'Amazon') {
-      items.push(authPill('广告', store.adAuthStatus));
     }
     return '<div class="auth-summary">' + items.join('') + '</div>';
   }
@@ -498,21 +498,20 @@
     if (menu) menu.remove();
   }
 
+  function supportsAdAuth(platform) {
+    return platform === 'Amazon' || platform === 'Shopee' || platform === 'TikTok Shop';
+  }
+
   function fillRowAuthMenu(menu, platform) {
     var options = authOptionsForPlatform(platform);
-    var adSupported = platform === 'Shopee' || platform === 'Amazon' || platform === 'TikTok Shop';
-    var disableAd = !adSupported;
 
     menu.querySelectorAll('.action-menu-item').forEach(function(item) {
       var type = item.dataset.authType;
       var visible = options.indexOf(type) !== -1;
-      // 非 Shopee 不展示联盟授权；广告不支持时仍展示并置灰
-      if (type === 'ad' && disableAd) visible = true;
-      var disabled = type === 'ad' && disableAd;
       item.hidden = !visible;
-      item.disabled = disabled;
-      item.classList.toggle('is-disabled', disabled);
-      item.title = (type === 'ad' && disableAd) ? '当前店铺不支持广告授权' : '';
+      item.disabled = false;
+      item.classList.remove('is-disabled');
+      item.title = '';
     });
   }
 
@@ -547,9 +546,8 @@
 
     var platform = store.platform;
     var allowed = authOptionsForPlatform(platform);
-    var adAllowed = platform === 'Shopee' || platform === 'Amazon' || platform === 'TikTok Shop';
     if (authType === 'ad') {
-      if (!adAllowed) {
+      if (!supportsAdAuth(platform)) {
         toast(platform + ' 不支持广告授权', 'error');
         return;
       }
