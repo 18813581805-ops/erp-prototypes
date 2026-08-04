@@ -375,6 +375,7 @@ th.col-alias{z-index:4;background:#fafafa!important}
 .icon-btn.ozon-edit:hover{border-color:var(--primary);background:#fff;color:var(--primary)}
 .icon-btn[hidden]{display:none!important}
 .ozon-auth-tip{margin:12px 0 0;padding:0;border:none!important;border-radius:0;background:transparent!important;box-shadow:none!important;color:#0958d9;font-size:13px;line-height:1.6}
+#ozonAuthCard .ozon-auth-meta{grid-template-columns:repeat(2, minmax(200px, 260px));justify-content:start;max-width:560px;gap:10px 20px}
 #ozonAuthCard.is-highlight{border-color:var(--border);box-shadow:none}
 .ozon-cred-block{margin-top:16px;padding:0;background:transparent;border:none;border-radius:0;max-width:430px}
 #ozonAuthCard.is-highlight .ozon-cred-block{background:transparent;border:none}
