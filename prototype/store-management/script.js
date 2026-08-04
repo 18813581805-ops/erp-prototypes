@@ -266,7 +266,13 @@
 
     filteredStores = window.STORE_DATA.filter(function(s) {
       var text = [s.name, s.alias, s.subName, s.platformShopName].join(' ').toLowerCase();
-      if (activePlatform !== '全部平台' && s.platform !== activePlatform) return false;
+      if (activePlatform === '阿里系') {
+        if (!isAlibabaFamilyPlatform(s.platform)) return false;
+      } else if (activePlatform === '其他平台') {
+        if (isNamedPlatformTab(s.platform) || isAlibabaFamilyPlatform(s.platform)) return false;
+      } else if (activePlatform !== '全部平台' && s.platform !== activePlatform) {
+        return false;
+      }
       if (keyword && text.indexOf(keyword) === -1) return false;
       if (body !== '全部' && s.body !== body) return false;
       if (site !== '全部' && s.site !== site) return false;
@@ -352,11 +358,18 @@
         tab.classList.add('active');
         activePlatform = tab.textContent.trim().replace(/\s*\(\d+\)$/, '');
         if (activePlatform === '全部') activePlatform = '全部平台';
-        if (activePlatform === '其他平台') activePlatform = '其他平台';
         closeRowAuthMenu();
         renderTable();
       });
     });
+  }
+
+  function isAlibabaFamilyPlatform(platform) {
+    return ['1688', '淘宝', '天猫'].indexOf(platform) >= 0;
+  }
+
+  function isNamedPlatformTab(platform) {
+    return ['Amazon', 'Shopee', 'AliExpress', 'Lazada', 'TikTok Shop', 'Temu'].indexOf(platform) >= 0;
   }
 
   function authOptionsForPlatform(platform) {
@@ -391,7 +404,10 @@
         ad: 'https://ads.tiktok.com/ac/account/auth'
       },
       Lazada: { store: 'https://auth.lazada.com/oauth/authorize' },
-      AliExpress: { store: 'https://oauth.aliexpress.com/authorize' }
+      AliExpress: { store: 'https://oauth.aliexpress.com/authorize' },
+      '1688': { store: 'https://auth.1688.com/oauth/authorize' },
+      '淘宝': { store: 'https://oauth.taobao.com/authorize' },
+      '天猫': { store: 'https://oauth.taobao.com/authorize' }
     };
     var platformMap = map[platform] || {};
     return platformMap[authType] || ('https://example.com/' + encodeURIComponent(platform) + '/' + authType + '-auth');
