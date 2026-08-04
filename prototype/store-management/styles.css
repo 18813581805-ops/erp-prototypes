@@ -369,13 +369,8 @@ th.col-alias{z-index:4;background:#fafafa!important}
 #ozonAuthCard .token-form-row{grid-template-columns:max-content 1fr;gap:12px;justify-items:start}
 #ozonAuthCard .token-label{text-align:left;justify-self:start}
 #ozonAuthCard .token-value{justify-self:stretch}
-#ozonAuthCard .token-field-note{margin-left:0}
-.ozon-auth-form{display:flex;flex-direction:column;gap:16px;padding:0;margin:0;align-items:stretch}
-.ozon-auth-field{display:grid;grid-template-columns:max-content 1fr;gap:12px;align-items:start;width:100%}
-.ozon-auth-label{padding-top:8px;font-size:13px;color:var(--muted);text-align:left;justify-self:start;white-space:nowrap}
-.ozon-auth-control{min-width:0;width:100%}
-.ozon-auth-control .form-input{width:100%}
-.drawer-body .ozon-auth-form .token-field-note{margin-left:0}
+#ozonAuthCard .token-field-note{margin:10px 0 0;padding:0}
+.ozon-auth-form .token-field-note{margin:0;padding:0}
 .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0 14px}
 .form-wide{grid-column:1/-1}
 .textarea{height:76px;padding-top:8px;resize:vertical}
