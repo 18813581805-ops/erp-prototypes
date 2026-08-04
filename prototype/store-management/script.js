@@ -1398,8 +1398,8 @@
     $('ozonAuthExpire').textContent = store.authExpire || '—';
     $('ozonAuthRemain').textContent = remainDays(store.authExpire);
     $('ozonAuthMainAccount').textContent = store.mainAccountId || '—';
-    $('viewOzonClientId').textContent = maskToken(store.clientId);
-    $('viewOzonApiKey').textContent = maskToken(store.apiKey);
+    $('viewOzonClientId').textContent = store.clientId || '—';
+    $('viewOzonApiKey').textContent = store.apiKey || '—';
     $('inlineOzonClientId').value = store.clientId || '';
     $('inlineOzonApiKey').value = store.apiKey || '';
   }
