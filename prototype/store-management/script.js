@@ -447,7 +447,7 @@
       rows += '<td class="col-platform-type">' + (s.platformStoreType || '—') + '</td>';
       rows += '<td class="col-sub platform-col platform-shopee">' + (s.platform === 'Shopee' ? (s.subName || '—') : '—') + '</td>';
       rows += '<td class="col-shopee-ext platform-col platform-shopee">' + shopeeExt + '</td>';
-      rows += '<td class="col-mall platform-col platform-shopee">' + (s.platform === 'Shopee' ? (s.isMall ? '是' : '否') : '—') + '</td>';
+      rows += '<td class="col-mall platform-col platform-mall">' + (s.platform === 'Shopee' ? (s.isMall ? '是' : '否') : '—') + '</td>';
       rows += '<td class="col-child-count platform-col platform-shopee">' + childCountHtml + '</td>';
       rows += '<td class="col-ad-account platform-col platform-tiktok">' + (s.platform === 'TikTok Shop' ? (s.adAccountId || '—') : '—') + '</td>';
       rows += '<td class="col-bc-id platform-col platform-tiktok">' + (s.platform === 'TikTok Shop' ? (s.bcId || '—') : '—') + '</td>';
@@ -474,10 +474,12 @@
     var showAmazon = activePlatform === 'Amazon';
     var showTiktok = activePlatform === 'TikTok Shop';
     var showTemu = activePlatform === 'Temu';
+    var showMall = activePlatform === 'Shopee' || activePlatform === '全部平台';
     document.querySelectorAll('.platform-shopee').forEach(function(el){ el.classList.toggle('is-hidden-col', !showShopee); });
     document.querySelectorAll('.platform-amazon').forEach(function(el){ el.classList.toggle('is-hidden-col', !showAmazon); });
     document.querySelectorAll('.platform-tiktok').forEach(function(el){ el.classList.toggle('is-hidden-col', !showTiktok); });
     document.querySelectorAll('.platform-temu').forEach(function(el){ el.classList.toggle('is-hidden-col', !showTemu); });
+    document.querySelectorAll('.platform-mall').forEach(function(el){ el.classList.toggle('is-hidden-col', !showMall); });
   }
 
   function bindTabs() {
