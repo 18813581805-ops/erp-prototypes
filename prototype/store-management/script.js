@@ -1398,20 +1398,16 @@
   function syncOzonAuthChrome() {
     var saveBtn = $('btnOzonAuthSave');
     if (saveBtn) saveBtn.hidden = !ozonAuthEditing;
-    var tip = $('ozonAuthTip');
     var showTip = currentStore ? shouldShowOzonAuthTip(currentStore) : false;
+    var tip = $('ozonAuthTip');
     if (tip) tip.hidden = !showTip;
     var card = $('ozonAuthCard');
-    if (card) card.classList.toggle('is-highlight', showTip || (ozonAuthEditing && showTip));
+    if (card) {
+      card.classList.toggle('is-highlight', showTip);
+      card.classList.toggle('is-editing', ozonAuthEditing);
+    }
     document.querySelectorAll('.ozon-auth-input').forEach(function(input) {
-      input.classList.toggle('is-highlight', ozonAuthEditing && showTip);
-    });
-    // when editing after tip cleared, still lightly highlight inputs with focus style via editing class
-    if (card) card.classList.toggle('is-editing', ozonAuthEditing);
-    document.querySelectorAll('.ozon-auth-input').forEach(function(input) {
-      if (ozonAuthEditing && !showTip) {
-        input.classList.add('is-highlight');
-      }
+      input.classList.toggle('is-highlight', ozonAuthEditing);
     });
   }
 
