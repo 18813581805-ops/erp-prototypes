@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>店铺管理 · 跨境电商 ERP</title>
   <link rel="stylesheet" href="../../ui-library/tokens.css" />
-  <link rel="stylesheet" href="styles.css?v=1722761000" />
+  <link rel="stylesheet" href="styles.css?v=1722761100" />
 </head>
 <body>
 <div class="erp-shell">
@@ -443,9 +443,15 @@
         </div>
         <div class="card" id="ozonAuthCard" hidden>
           <div class="card-title">授权凭证</div>
-          <div class="token-panel">
-            <div class="token-form-row"><span class="token-label">Client ID:</span><span class="token-value" id="authOzonClientId">—</span></div>
-            <div class="token-form-row"><span class="token-label">API Key:</span><span class="token-value" id="authOzonApiKey">—</span></div>
+          <div class="token-panel ozon-auth-panel">
+            <div class="ozon-auth-field">
+              <span class="ozon-auth-label">Client ID:</span>
+              <div class="ozon-auth-control"><span class="ozon-auth-value" id="authOzonClientId">—</span></div>
+            </div>
+            <div class="ozon-auth-field">
+              <span class="ozon-auth-label">API Key:</span>
+              <div class="ozon-auth-control"><span class="ozon-auth-value" id="authOzonApiKey">—</span></div>
+            </div>
             <p class="token-field-note">注：账号授权后，数据会自动拉取，一般需要几十分钟到几小时不等。</p>
           </div>
         </div>
@@ -682,7 +688,7 @@
 
 <!-- ============ Ozon 编辑授权信息 ============ -->
 <div class="drawer-overlay" id="drawerEditOzonAuth" hidden>
-  <div class="drawer" style="width:560px;">
+  <div class="drawer" style="width:720px;">
     <div class="drawer-header">
       <h3>编辑授权信息</h3>
       <button class="drawer-close" id="btnCloseEditOzonAuth">✕</button>
