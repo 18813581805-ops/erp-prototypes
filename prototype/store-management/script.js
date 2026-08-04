@@ -265,21 +265,49 @@
       return;
     }
     var temu = isTemuPlatform(platform);
-    var options = temu
-      ? [['', '请选择店铺类型'], ['全托管', '全托管'], ['半托管', '半托管']]
-      : [['', '请选择店铺类型'], ['本土', '本土'], ['全球', '全球']];
+    var lazada = platform === 'Lazada';
+    var options;
+    if (temu) {
+      options = [['', '请选择店铺类型'], ['全托管', '全托管'], ['半托管', '半托管']];
+    } else if (lazada) {
+      options = [['', '请选择店铺类型'], ['跨境', '跨境'], ['本土', '本土']];
+    } else {
+      options = [['', '请选择店铺类型'], ['本土', '本土'], ['全球', '全球']];
+    }
     select.innerHTML = options.map(function(item) {
       return '<option value="' + item[0] + '">' + item[1] + '</option>';
     }).join('');
     var val = currentValue || '';
     if (temu) {
       select.value = (val === '全托管' || val === '半托管') ? val : '';
-    } else if (val === '全托管' || val === '半托管') {
+    } else if (lazada) {
+      if (val === '跨境' || val === '本土') select.value = val;
+      else if (isGlobalStoreType(val) || val === '全球') select.value = '跨境';
+      else if (val) select.value = '本土';
+      else select.value = '';
+    } else if (val === '全托管' || val === '半托管' || val === '跨境') {
       select.value = '';
     } else {
       select.value = val ? (isGlobalStoreType(val) ? '全球' : '本土') : '';
     }
     syncSelect('editStoreType');
+  }
+
+  function syncIsMallField(platform, currentValue) {
+    var group = $('editIsMallGroup');
+    var select = $('editIsMall');
+    if (!group || !select) return;
+    var isShopee = platform === 'Shopee';
+    group.hidden = !isShopee;
+    if (!isShopee) {
+      select.value = '';
+      syncSelect('editIsMall');
+      return;
+    }
+    if (currentValue === true || currentValue === '是') select.value = '是';
+    else if (currentValue === false || currentValue === '否') select.value = '否';
+    else select.value = '';
+    syncSelect('editIsMall');
   }
 
   function normalizeStore(store) {
@@ -303,6 +331,7 @@
     if (!store.registrationDate) store.registrationDate = principalEnterpriseRegistrationTime(store.registrationCompany);
     store.body = store.registrationCompany;
     if (!('adSyncSetting' in store)) store.adSyncSetting = null;
+    if (!('isMall' in store)) store.isMall = false;
     if (isTemuPlatform(store.platform)) ensureTemuTokens(store);
     if (isOzonPlatform(store.platform)) ensureOzonAuth(store);
     if (isAlibabaFamilyPlatform(store.platform)) ensureAlibabaAuth(store);
@@ -418,6 +447,7 @@
       rows += '<td class="col-platform-type">' + (s.platformStoreType || '—') + '</td>';
       rows += '<td class="col-sub platform-col platform-shopee">' + (s.platform === 'Shopee' ? (s.subName || '—') : '—') + '</td>';
       rows += '<td class="col-shopee-ext platform-col platform-shopee">' + shopeeExt + '</td>';
+      rows += '<td class="col-mall platform-col platform-shopee">' + (s.platform === 'Shopee' ? (s.isMall ? '是' : '否') : '—') + '</td>';
       rows += '<td class="col-child-count platform-col platform-shopee">' + childCountHtml + '</td>';
       rows += '<td class="col-ad-account platform-col platform-tiktok">' + (s.platform === 'TikTok Shop' ? (s.adAccountId || '—') : '—') + '</td>';
       rows += '<td class="col-bc-id platform-col platform-tiktok">' + (s.platform === 'TikTok Shop' ? (s.bcId || '—') : '—') + '</td>';
@@ -1034,6 +1064,7 @@
   function displayStoreType(storeType) {
     if (!storeType) return '—';
     if (storeType === '全托管' || storeType === '半托管') return storeType;
+    if (storeType === '跨境' || storeType === '本土' || storeType === '全球') return storeType;
     return isGlobalStoreType(storeType) ? '全球' : '本土';
   }
 
@@ -1069,7 +1100,11 @@
     document.querySelectorAll('.platform-edit-tiktok').forEach(function(el) {
       el.hidden = platform !== 'TikTok Shop';
     });
+    document.querySelectorAll('.platform-edit-shopee').forEach(function(el) {
+      el.hidden = platform !== 'Shopee';
+    });
     syncStoreTypeOptions(platform, creatingBasicStore ? value('editStoreType') : (currentStore ? currentStore.storeType : ''));
+    syncIsMallField(platform, creatingBasicStore ? (value('editIsMall') || '') : (currentStore ? currentStore.isMall : ''));
   }
 
   function bindCreateStore() {
@@ -1194,6 +1229,7 @@
       authType: authType,
       mainAccountId: mainAccountId,
       isSip: !!isSip,
+      isMall: false,
       syncOrderTime: now,
       operator: '待分配',
       cs: '待分配',
@@ -1261,6 +1297,7 @@
       enabled: false,
       useStatus: '待启用',
       storeEmail: '',
+      isMall: false,
       registrationCompany: '',
       paymentAccounts: [],
       permissions: [],
@@ -1386,6 +1423,7 @@
     $('basicTypeItem').hidden = hidesStoreType(store.platform);
     $('basicMainAcct').textContent = store.mainAccountId || '否';
     $('basicSip').textContent = store.isSip ? '是' : '否';
+    $('basicIsMall').textContent = store.isMall ? '是' : '否';
     $('basicAdAccountId').textContent = store.platform === 'TikTok Shop' ? (store.adAccountId || '—') : '—';
     $('basicBcId').textContent = store.platform === 'TikTok Shop' ? (store.bcId || '—') : '—';
     document.querySelectorAll('.platform-detail-shopee').forEach(function(el){ el.hidden = store.platform !== 'Shopee'; });
@@ -1897,6 +1935,7 @@
     $('editSite').textContent = store.site || '—';
     $('editSiteSelect').value = creatingBasicStore ? '' : (store.site || '');
     document.querySelectorAll('.platform-edit-tiktok').forEach(function(el){ el.hidden = store.platform !== 'TikTok Shop'; });
+    document.querySelectorAll('.platform-edit-shopee').forEach(function(el){ el.hidden = store.platform !== 'Shopee'; });
     setBrowserEnumValue(store.browserName || '');
     $('editBrowserStore').value = store.browserStoreName || '';
     $('editAccountType').value = ['自注册', '购买'].indexOf(store.accountType) >= 0 ? store.accountType : '';
@@ -1910,6 +1949,7 @@
     syncSelect('editRegistrationSubject');
     updateEditCreatePlatformFields();
     syncStoreTypeOptions(creatingBasicStore ? value('editPlatformSelect') : store.platform, store.storeType);
+    syncIsMallField(creatingBasicStore ? value('editPlatformSelect') : store.platform, creatingBasicStore ? '' : store.isMall);
   }
 
   function bindEditBasic() {
@@ -1935,6 +1975,10 @@
       }
       if (!hidesStoreType(platform) && !value('editStoreType')) {
         toast('请选择店铺类型', 'error');
+        return;
+      }
+      if (platform === 'Shopee' && !value('editIsMall')) {
+        toast('请选择是否mall店', 'error');
         return;
       }
       if (!value('editBrowserName')) {
@@ -1978,6 +2022,7 @@
       currentStore.platformShopId = value('editShopId');
       currentStore.platformShopName = value('editShopName');
       currentStore.storeType = hidesStoreType(platform) ? '' : value('editStoreType');
+      currentStore.isMall = platform === 'Shopee' ? (value('editIsMall') === '是') : false;
       currentStore.browserName = value('editBrowserName');
       currentStore.browserStoreName = value('editBrowserStore');
       currentStore.accountType = value('editAccountType');
