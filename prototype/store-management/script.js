@@ -1397,7 +1397,9 @@
 
   function syncOzonAuthChrome() {
     var saveBtn = $('btnOzonAuthSave');
+    var editBtn = $('btnOzonAuthEdit');
     if (saveBtn) saveBtn.hidden = !ozonAuthEditing;
+    if (editBtn) editBtn.hidden = ozonAuthEditing;
     var showTip = currentStore ? shouldShowOzonAuthTip(currentStore) : false;
     var tip = $('ozonAuthTip');
     if (tip) tip.hidden = !showTip;
