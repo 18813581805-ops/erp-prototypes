@@ -23,6 +23,10 @@
   var ozonAuthHighlight = false;
   var OZON_CLIENT_ID_MAX = 20;
   var OZON_API_KEY_MAX = 36;
+  // Temu 常见凭证长度：App Key≈32、App Secret≈40、access_token≈56~64；输入上限略留余量
+  var TEMU_ACCESS_TOKEN_MAX = 128;
+  var TEMU_APP_KEY_MAX = 64;
+  var TEMU_APP_SECRET_MAX = 64;
 
   function $(id) {
     return document.getElementById(id);
@@ -2051,6 +2055,15 @@
       appSecret: value('editProductAppSecret')
     };
 
+    var lengthError = validateTemuTokenTripletLengths(nextOrder.us, '美区订单') ||
+      validateTemuTokenTripletLengths(nextOrder.eu, '欧区订单') ||
+      validateTemuTokenTripletLengths(nextOrder.global, '全球订单') ||
+      validateTemuTokenTripletLengths(nextProduct, '商品');
+    if (lengthError) {
+      toast(lengthError, 'error');
+      return;
+    }
+
     var oldOrder = {
       us: Object.assign({}, currentStore.orderPullTokens.us),
       eu: Object.assign({}, currentStore.orderPullTokens.eu),
@@ -2086,6 +2099,20 @@
     setTemuAuthViewMode();
     renderOperationLogs(currentStore);
     toast(storeHasTemuTokens(currentStore) ? '授权信息保存成功，已更新授权状态' : '授权信息已保存（未填写 Token，保持未授权）');
+  }
+
+  function validateTemuTokenTripletLengths(token, label) {
+    token = token || emptyTokenTriplet();
+    if ((token.accessToken || '').length > TEMU_ACCESS_TOKEN_MAX) {
+      return label + ' access_token 最长 ' + TEMU_ACCESS_TOKEN_MAX + ' 位';
+    }
+    if ((token.appKey || '').length > TEMU_APP_KEY_MAX) {
+      return label + ' App Key 最长 ' + TEMU_APP_KEY_MAX + ' 位';
+    }
+    if ((token.appSecret || '').length > TEMU_APP_SECRET_MAX) {
+      return label + ' App Secret 最长 ' + TEMU_APP_SECRET_MAX + ' 位';
+    }
+    return '';
   }
 
   function readOrderTokenInputs() {
