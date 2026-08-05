@@ -394,6 +394,23 @@ th.col-alias{z-index:4;background:#fafafa!important}
 .form-wide{grid-column:1/-1}
 .textarea{height:76px;padding-top:8px;resize:vertical}
 
+/* Temu 主店铺组 / 区域店树形列表 */
+.temu-group-row{background:#f7fbff}
+.temu-group-row td{border-bottom-color:#d6e4ff}
+.temu-site-child{background:#fcfdff}
+.temu-site-child td{box-shadow:inset 3px 0 0 #91caff}
+.temu-main-cell,.temu-tree-cell{display:flex;align-items:flex-start;gap:8px;min-width:0}
+.temu-group-toggle{width:22px;height:22px;margin-top:1px;border:1px solid #91caff;border-radius:4px;background:#fff;color:#1677ff;font-size:12px;line-height:1;flex:0 0 auto;padding:0}
+.temu-group-toggle:hover{background:#e6f4ff}
+.temu-tree-branch{width:22px;flex:0 0 auto;position:relative;align-self:stretch;min-height:22px}
+.temu-tree-branch::before{content:"";position:absolute;left:10px;top:0;bottom:50%;width:1px;background:#91caff}
+.temu-tree-branch::after{content:"";position:absolute;left:10px;top:50%;width:10px;height:1px;background:#91caff}
+.temu-tree-content{min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.temu-main-name{font-weight:600;color:var(--text)}
+.temu-main-sub{width:100%;font-size:12px;color:var(--subtle);line-height:1.4;margin-top:2px}
+.temu-role-tag{margin:0}
+.temu-muted{color:var(--subtle);font-size:13px}
+
 /* ===== Toast ===== */
 .toast{position:fixed;top:24px;left:50%;transform:translateX(-50%);padding:10px 20px;background:var(--panel);border-radius:var(--radius);box-shadow:0 4px 16px rgba(0,0,0,.12);font-size:13px;z-index:2000;animation:fadeIn .2s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
