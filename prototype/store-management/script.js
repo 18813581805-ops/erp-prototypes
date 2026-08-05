@@ -620,6 +620,8 @@
       '<td class="col-actions"><div class="cell-actions">' +
         '<button class="table-action-link" data-op="详情" data-id="' + primary.id + '" type="button">详情</button>' +
         '<button class="table-action-link" data-op="编辑" data-id="' + primary.id + '" type="button">编辑</button>' +
+        '<button class="table-action-link" data-op="立即授权" data-id="' + primary.id + '" type="button">立即授权 ▾</button>' +
+        '<button class="table-action-more" data-op="更多" data-id="' + primary.id + '" type="button">更多 ▾</button>' +
       '</div></td>' +
     '</tr>';
   }
