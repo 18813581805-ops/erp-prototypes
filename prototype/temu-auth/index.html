@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="build-time" content="2026-08-05T12:10:00+08:00" />
-  <title>Temu 店铺授权 · 云易盒 ERP</title>
+  <meta name="build-time" content="2026-08-05T12:35:00+08:00" />
+  <title>Temu 站点店铺授权 · 云易盒 ERP</title>
   <link rel="stylesheet" href="../../ui-library/tokens.css" />
-  <link rel="stylesheet" href="styles.css?v=202608051210" />
+  <link rel="stylesheet" href="styles.css?v=202608051235" />
 </head>
 <body>
 <div class="erp-shell">
@@ -20,9 +20,9 @@
     </div>
     <nav class="side-menu">
       <div class="menu-group">基础数据</div>
-      <button class="side-item active"><span class="side-icon">店</span><span>Temu 店铺授权</span></button>
-      <button class="side-item"><span class="side-icon">商</span><span>商品管理</span></button>
+      <button class="side-item active"><span class="side-icon">店</span><span>Temu 站点店铺</span></button>
       <button class="side-item"><span class="side-icon">仓</span><span>仓库管理</span></button>
+      <button class="side-item"><span class="side-icon">财</span><span>财务统计</span></button>
       <div class="menu-group">订单管理</div>
       <button class="side-item"><span class="side-icon">订</span><span>订单列表</span></button>
     </nav>
@@ -39,32 +39,38 @@
 
     <section class="page-title-panel">
       <div>
-        <h1>Temu 店铺授权</h1>
-        <p>单物理实体 + 分层 Token：1 个商品 Token + N 个区域订单 Token，在同一店铺下完成配置</p>
+        <h1>Temu 站点店铺</h1>
+        <p>父子店铺架构：一次录入主店铺前缀与商品 Token，批量生成美区 / 欧区 / 全球区独立站点店铺，各自履约、扣库存与核算</p>
       </div>
+    </section>
+
+    <section class="content-panel tip-panel">
+      <strong>模型说明</strong>
+      列表中的每一行都是独立 ERP 逻辑店铺（站点级虚拟店铺）。同一商家下商品 Token 自动共享；订单库、仓库扣减、财务账单按站点店铺隔离。
     </section>
 
     <section class="content-panel query-panel">
       <div class="query-grid">
         <div class="field">
           <label>店铺名称</label>
-          <input id="filterKeyword" placeholder="自定义店铺名 / 官方店铺名 / 店铺ID" />
+          <input id="filterKeyword" placeholder="站点店铺名 / 主店铺前缀 / 店铺ID" />
         </div>
         <div class="field">
-          <label>托管模式</label>
-          <select id="filterMode">
+          <label>站点</label>
+          <select id="filterSite">
             <option value="">全部</option>
-            <option>半托管</option>
-            <option>全托管</option>
+            <option value="us">美区</option>
+            <option value="eu">欧区</option>
+            <option value="global">全球区</option>
           </select>
         </div>
         <div class="field">
-          <label>商品 Token</label>
-          <select id="filterProductToken">
+          <label>订单拉取状态</label>
+          <select id="filterOrderStatus">
             <option value="">全部</option>
-            <option>校验通过</option>
-            <option>未校验</option>
-            <option>校验失败</option>
+            <option>正常拉取</option>
+            <option>Token 异常</option>
+            <option>未开通</option>
           </select>
         </div>
         <div class="query-actions">
@@ -75,45 +81,62 @@
     </section>
 
     <section class="action-bar">
-      <button class="btn primary" id="btnAddStore" type="button">+ 新增 / 授权店铺</button>
-      <span class="action-hint">同一窗口分层配置：全局商品 Token → 区域订单 Token</span>
+      <button class="btn primary" id="btnBatchAuth" type="button">+ 批量创建站点店铺</button>
+      <span class="action-hint">一次填写主店铺前缀 + 商品 Token，勾选站点即批量生成独立店铺</span>
     </section>
 
     <section class="content-panel list-panel">
-      <div id="storeList" class="store-list"></div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>站点店铺</th>
+              <th>主店铺前缀</th>
+              <th>站点</th>
+              <th>官方店铺 ID</th>
+              <th>商品 Token（共享）</th>
+              <th>订单 Token</th>
+              <th>关联仓库</th>
+              <th>订单拉取</th>
+              <th>财务看板</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="storeTableBody"></tbody>
+        </table>
+      </div>
       <div class="table-footer">
-        <span>共 <strong id="totalCount">0</strong> 个物理店铺</span>
+        <span>共 <strong id="totalCount">0</strong> 个独立站点店铺</span>
       </div>
     </section>
   </main>
 </div>
 
-<!-- 两步式授权 Modal -->
+<!-- 一次性批量创建多站点店铺 -->
 <div class="modal-overlay" id="authModal" hidden>
   <div class="modal auth-modal">
     <div class="modal-header">
       <div>
-        <h3 id="modalTitle">新增 Temu 店铺授权</h3>
-        <p class="modal-subtitle">单物理实体：一个店铺下配置 1 个商品 Token + 多个区域订单 Token</p>
+        <h3>批量创建 Temu 站点店铺</h3>
+        <p class="modal-subtitle">一次输入主店铺前缀与全局商品 Token，勾选站点后批量生成独立 ERP 店铺</p>
       </div>
       <button class="modal-close" id="btnCloseModal" type="button">✕</button>
     </div>
 
     <div class="step-bar">
-      <div class="step-item active" data-step="1"><span class="step-num">1</span><span>店铺基础与商品 Token</span></div>
+      <div class="step-item active" data-step="1"><span class="step-num">1</span><span>基础信息 & 商品 Token</span></div>
       <div class="step-line"></div>
-      <div class="step-item" data-step="2"><span class="step-num">2</span><span>区域订单 Token 绑定</span></div>
+      <div class="step-item" data-step="2"><span class="step-num">2</span><span>勾选站点并配置订单 Token</span></div>
     </div>
 
     <div class="modal-body">
-      <!-- Step 1 -->
       <div id="step1" class="step-pane">
-        <div class="form-section-title">店铺基础信息</div>
+        <div class="form-section-title">一次性输入（全站点共享）</div>
         <div class="form-grid">
           <div class="form-group form-wide">
-            <label class="form-label required">自定义店铺名称</label>
-            <input class="form-input" id="inputAlias" placeholder="例如：创美家居旗舰店-01" maxlength="50" />
-            <p class="form-help">作为 ERP 内部识别的唯一物理店铺名称</p>
+            <label class="form-label required">主店铺 / 品牌前缀</label>
+            <input class="form-input" id="inputPrefix" placeholder="例如：创美家居" maxlength="40" />
+            <p class="form-help">保存后将按「前缀-站点」自动命名，如：创美家居-美区店</p>
           </div>
           <div class="form-group">
             <label class="form-label required">托管业务类型</label>
@@ -130,46 +153,69 @@
               <option>云易盒科技美国</option>
             </select>
           </div>
-        </div>
-
-        <div class="form-section-title">商品 / 库存 Token（Global Application Token）</div>
-        <div class="token-verify-row">
-          <div class="form-group form-wide" style="margin:0;flex:1;">
-            <label class="form-label required">商品 Token</label>
+          <div class="form-group form-wide">
+            <label class="form-label required">商品 / 库存 Token（全局）</label>
             <div class="inline-input-row">
-              <input class="form-input" id="inputProductToken" placeholder="粘贴 Global Application Token" maxlength="128" />
+              <input class="form-input" id="inputProductToken" placeholder="粘贴全局商品 Token，校验后自动下发给所选站点店铺" maxlength="128" />
               <button class="btn" id="btnVerifyProduct" type="button">校验 Token</button>
             </div>
-            <p class="form-help">校验通过后将自动回填 Temu 后台店铺 ID 与官方店铺名称</p>
+            <p class="form-help">用户只需输入一次；系统自动复用到本次批量创建的所有区域站点店铺</p>
           </div>
         </div>
         <div class="fetch-meta" id="productFetchMeta" hidden>
-          <div class="meta-item"><span class="meta-label">店铺 ID</span><strong id="fetchedShopId">—</strong></div>
+          <div class="meta-item"><span class="meta-label">商家主体 ID</span><strong id="fetchedMerchantId">—</strong></div>
           <div class="meta-item"><span class="meta-label">官方店铺名称</span><strong id="fetchedShopName">—</strong></div>
           <div class="meta-item"><span class="meta-label">校验状态</span><span class="status-tag ok" id="productVerifyStatus">✓ 校验通过</span></div>
         </div>
       </div>
 
-      <!-- Step 2 -->
       <div id="step2" class="step-pane" hidden>
-        <div class="form-section-title">已开通站点 / 区域订单 Token 绑定</div>
-        <p class="form-help" style="margin-bottom:12px;">勾选该店铺实际开通的区域；未勾选区域不校验、不触发定时拉单</p>
-        <div class="region-cards" id="regionCards"></div>
+        <div class="form-section-title">选择要生成的站点店铺（勾选即生成独立店铺）</div>
+        <p class="form-help" style="margin-bottom:12px;">
+          勾选后需填写该站点订单 Token；保存将批量创建独立 ERP 店铺，商品 Token 自动共享。
+        </p>
+        <div id="previewBox" class="preview-box" hidden></div>
+        <div class="site-cards" id="siteCards"></div>
       </div>
     </div>
 
     <div class="modal-footer">
       <button class="btn" id="btnCancelModal" type="button">取消</button>
       <button class="btn" id="btnPrevStep" type="button" hidden>上一步</button>
-      <button class="btn primary" id="btnNextStep" type="button">下一步：配置区域 Token</button>
-      <button class="btn primary" id="btnSaveAuth" type="button" hidden>保存授权配置</button>
+      <button class="btn primary" id="btnNextStep" type="button">下一步：选择站点</button>
+      <button class="btn primary" id="btnSaveBatch" type="button" hidden>保存并批量创建店铺</button>
+    </div>
+  </div>
+</div>
+
+<!-- 单店更新订单 Token -->
+<div class="modal-overlay" id="tokenModal" hidden>
+  <div class="modal" style="width:min(520px,100%)">
+    <div class="modal-header">
+      <div>
+        <h3>更新订单 Token</h3>
+        <p class="modal-subtitle" id="tokenModalSubtitle">—</p>
+      </div>
+      <button class="modal-close" id="btnCloseTokenModal" type="button">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label required">订单 Token</label>
+        <input class="form-input" id="inputOrderTokenEdit" placeholder="粘贴该站点订单 Token" maxlength="128" />
+      </div>
+      <p class="form-help">商品 Token 由主店铺共享，无需在此重复填写</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="btnCancelTokenModal" type="button">取消</button>
+      <button class="btn" id="btnTestOrderToken" type="button">测试连接</button>
+      <button class="btn primary" id="btnSaveOrderToken" type="button">保存</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast" hidden></div>
 
-<script src="data.js?v=202608051210"></script>
-<script src="script.js?v=202608051210"></script>
+<script src="data.js?v=202608051235"></script>
+<script src="script.js?v=202608051235"></script>
 </body>
 </html>
