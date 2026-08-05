@@ -1373,7 +1373,10 @@
             if (detailDrawer && !detailDrawer.hidden) openDetail(currentStore);
           }
         }
-        toast(enabled ? '店铺已启用' : '店铺已关闭');
+        var aliasLabel = (targetStore && (targetStore.alias || targetStore.name)) || '';
+        toast(aliasLabel
+          ? ('店铺「' + aliasLabel + '」' + (enabled ? '已启用' : '已关闭'))
+          : (enabled ? '店铺已启用' : '店铺已关闭'));
         return;
       }
       if (e.target.classList.contains('temu-group-checkbox')) {
