@@ -563,7 +563,7 @@
   }
 
   function isNamedPlatformTab(platform) {
-    return ['Amazon', 'Shopee', 'AliExpress', 'Lazada', 'TikTok Shop', 'Temu', 'Ozon', '1688', '淘宝', '天猫'].indexOf(platform) >= 0;
+    return ['Amazon', 'Shopee', 'AliExpress', 'Lazada', 'TikTok Shop', 'Temu', 'Ozon', '1688'].indexOf(platform) >= 0;
   }
 
   function authOptionsForPlatform(platform) {
