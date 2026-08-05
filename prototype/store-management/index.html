@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>店铺管理 · 跨境电商 ERP</title>
   <link rel="stylesheet" href="../../ui-library/tokens.css" />
-  <link rel="stylesheet" href="styles.css?v=202608051105" />
+  <link rel="stylesheet" href="styles.css?v=202608051500" />
 </head>
 <body>
 <div class="erp-shell">
@@ -58,13 +58,13 @@
 
     <!-- 平台 Tab -->
     <section class="platform-tabs">
-      <button class="platform-tab active">全部 (22)</button>
+      <button class="platform-tab active">全部 (23)</button>
       <button class="platform-tab">Amazon (2)</button>
       <button class="platform-tab">Shopee (4)</button>
       <button class="platform-tab">AliExpress (1)</button>
       <button class="platform-tab">Lazada (1)</button>
       <button class="platform-tab">TikTok Shop</button>
-      <button class="platform-tab">Temu (1)</button>
+      <button class="platform-tab">Temu (2)</button>
       <button class="platform-tab">Ozon (1)</button>
       <button class="platform-tab">1688 (1)</button>
       <button class="platform-tab">其他平台 (11)</button>
@@ -639,6 +639,15 @@
           </select>
         </div>
         <div class="form-group" id="editStoreTypeGroup"><label class="form-label required">店铺类型</label><select class="ant-select" id="editStoreType"><option value="">请选择店铺类型</option><option value="本土">本土</option><option value="全球">全球</option><option value="全托管">全托管</option><option value="半托管">半托管</option></select></div>
+        <div class="form-group form-wide platform-edit-temu" id="editTemuRegionGroup" hidden>
+          <label class="form-label required">区域</label>
+          <div class="checkbox-grid" id="editTemuRegionChecks">
+            <label><input type="checkbox" value="us" class="temu-region-check" /> 美区（别名后缀 _US）</label>
+            <label><input type="checkbox" value="eu" class="temu-region-check" /> 欧区（别名后缀 _EU）</label>
+            <label><input type="checkbox" value="global" class="temu-region-check" /> 全球（别名后缀 _BT_GLOBAL）</label>
+          </div>
+          <p class="form-help" id="editTemuRegionHint">勾选多个区域将拆分为多条独立店铺；别名自动追加区域缩写，其余字段相同</p>
+        </div>
         <div class="form-group platform-edit-shopee" id="editIsMallGroup" hidden>
           <label class="form-label required">是否mall店</label>
           <select class="ant-select" id="editIsMall">
@@ -777,7 +786,7 @@
   </div>
 </div>
 
-<script src="data.js?v=202608051105"></script>
-<script src="script.js?v=202608051105"></script>
+<script src="data.js?v=202608051500"></script>
+<script src="script.js?v=202608051500"></script>
 </body>
 </html>
