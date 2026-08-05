@@ -193,10 +193,8 @@
     }) || tokenTripletHasValue(store.productPullToken);
   }
 
-  function maskToken(value) {
-    if (!value) return '—';
-    if (value.length <= 8) return '****';
-    return value.slice(0, 4) + '****' + value.slice(-4);
+  function displayToken(value) {
+    return value ? String(value) : '—';
   }
 
   function applyTemuAuthFromTokens(store) {
@@ -2205,17 +2203,17 @@
   function renderAuthOrderTokenRegion(store, region) {
     ensureTemuTokens(store);
     var token = store.orderPullTokens[region] || emptyTokenTriplet();
-    $('authOrderAccessToken').textContent = maskToken(token.accessToken);
-    $('authOrderAppKey').textContent = maskToken(token.appKey);
-    $('authOrderAppSecret').textContent = maskToken(token.appSecret);
+    $('authOrderAccessToken').textContent = displayToken(token.accessToken);
+    $('authOrderAppKey').textContent = displayToken(token.appKey);
+    $('authOrderAppSecret').textContent = displayToken(token.appSecret);
   }
 
   function renderAuthProductToken(store) {
     ensureTemuTokens(store);
     var token = store.productPullToken || emptyTokenTriplet();
-    $('authProductAccessToken').textContent = maskToken(token.accessToken);
-    $('authProductAppKey').textContent = maskToken(token.appKey);
-    $('authProductAppSecret').textContent = maskToken(token.appSecret);
+    $('authProductAccessToken').textContent = displayToken(token.accessToken);
+    $('authProductAppKey').textContent = displayToken(token.appKey);
+    $('authProductAppSecret').textContent = displayToken(token.appSecret);
   }
 
   function renderRelatedStores(store) {
