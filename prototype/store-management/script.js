@@ -586,12 +586,13 @@
     var authCount = stores.filter(function(s){ return s.authStatus === '已授权'; }).length;
     var statusLabel = enabledCount === stores.length ? '启用' : (enabledCount ? '部分启用' : '停用');
     var primary = stores[0];
+    var groupAuthStatus = authCount === stores.length ? '已授权' : (authCount === 0 ? '未授权' : (primary.authStatus || '未授权'));
     return '<tr class="temu-group-row" data-temu-group="' + escapeHtml(groupKey) + '">' +
       '<td class="col-check"><input type="checkbox" class="temu-group-checkbox" data-temu-group="' + escapeHtml(groupKey) + '" ' + (allChecked ? 'checked' : '') + ' /></td>' +
       '<td class="col-name">' +
         '<div class="temu-main-cell">' +
           '<div class="temu-tree-content">' +
-            '<span class="temu-main-name">' + escapeHtml(mainName) + '</span>' +
+            '<a href="javascript:void(0)" class="store-name-link temu-main-name" data-op="详情" data-id="' + primary.id + '">' + escapeHtml(mainName) + '</a>' +
             '<span class="tag tag-blue temu-role-tag">主店铺</span>' +
             '<span class="temu-count-chip">' + stores.length + ' 区</span>' +
           '</div>' +
@@ -612,7 +613,7 @@
       '<td class="col-bc-id platform-col platform-tiktok">—</td>' +
       '<td class="col-bu">' + escapeHtml(bu) + '</td>' +
       '<td class="col-status">' + tagHtml(statusLabel, enabledCount ? 'tag-green' : 'tag-gray') + '</td>' +
-      '<td class="col-auth">' + tagHtml('已授权 ' + authCount + '/' + stores.length, authCount ? 'tag-green' : 'tag-gray') + '</td>' +
+      '<td class="col-auth"><div class="auth-summary">' + authPill('店铺', groupAuthStatus) + '</div></td>' +
       '<td class="col-auth-time">' + buildTemuTimeStackHtml(stores, 'authTime') + '</td>' +
       '<td class="col-expire">' + buildTemuTimeStackHtml(stores, 'authExpire') + '</td>' +
       '<td class="col-sync">' + escapeHtml(primary.syncOrderTime || '—') + '</td>' +
