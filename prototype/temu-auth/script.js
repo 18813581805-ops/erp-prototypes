@@ -1,31 +1,33 @@
 (function () {
-  var stores = (window.TEMU_STORE_DATA || []).map(cloneStore);
-  var regions = window.TEMU_REGIONS || [];
-  var editingId = null;
+  var sites = window.TEMU_SITES || [];
+  var stores = (window.TEMU_SITE_STORES || []).map(clone);
   var currentStep = 1;
   var draft = emptyDraft();
-  var openIds = new Set();
+  var editingStoreId = null;
 
   function $(id) { return document.getElementById(id); }
 
-  function cloneStore(store) {
-    return JSON.parse(JSON.stringify(store));
-  }
+  function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
 
   function emptyDraft() {
-    var regionState = {};
-    regions.forEach(function (r) {
-      regionState[r.key] = { enabled: false, token: '', status: '未开通' };
+    var siteState = {};
+    sites.forEach(function (s) {
+      siteState[s.key] = {
+        enabled: false,
+        orderToken: '',
+        orderStatus: '未开通',
+        warehouse: s.defaultWarehouse
+      };
     });
     return {
-      alias: '',
+      prefix: '',
       mode: '',
       company: '云易盒科技有限公司',
-      shopId: '',
-      shopName: '',
       productToken: '',
       productStatus: '未校验',
-      regions: regionState
+      merchantId: '',
+      officialName: '',
+      sites: siteState
     };
   }
 
@@ -35,104 +37,7 @@
     el.className = 'toast' + (type ? ' ' + type : '');
     el.hidden = false;
     clearTimeout(toast._t);
-    toast._t = setTimeout(function () { el.hidden = true; }, 2200);
-  }
-
-  function maskToken(token) {
-    if (!token) return '—';
-    if (token.length <= 12) return token.slice(0, 4) + '****';
-    return token.slice(0, 12) + '****';
-  }
-
-  function statusClass(status) {
-    if (status === '连通正常' || status === '校验通过') return 'ok';
-    if (status === '授权过期' || status === '未校验') return 'warn';
-    if (status === '校验失败') return 'err';
-    return 'off';
-  }
-
-  function filteredStores() {
-    var keyword = ($('filterKeyword').value || '').trim().toLowerCase();
-    var mode = $('filterMode').value;
-    var product = $('filterProductToken').value;
-    return stores.filter(function (s) {
-      if (mode && s.mode !== mode) return false;
-      if (product && s.productStatus !== product) return false;
-      if (!keyword) return true;
-      var text = [s.alias, s.shopName, s.shopId, s.company].join(' ').toLowerCase();
-      return text.indexOf(keyword) >= 0;
-    });
-  }
-
-  function renderList() {
-    var list = filteredStores();
-    $('totalCount').textContent = String(list.length);
-    var root = $('storeList');
-    if (!list.length) {
-      root.innerHTML = '<div class="empty">暂无符合条件的店铺</div>';
-      return;
-    }
-    root.innerHTML = list.map(function (s) {
-      var tags = regions.map(function (r) {
-        var info = s.regions[r.key] || { enabled: false, status: '未开通' };
-        var cls = info.enabled ? statusClass(info.status) : 'off';
-        var label = info.enabled ? r.short : r.short + '未开通';
-        return '<span class="region-tag ' + cls + '"><span class="dot ' + cls + '"></span>' + label + '</span>';
-      }).join('');
-
-      var detailRows = regions.map(function (r) {
-        var info = s.regions[r.key] || { enabled: false, token: '', status: '未开通' };
-        var statusHtml = info.enabled
-          ? '<span class="status-tag ' + statusClass(info.status) + '">' + info.status + '</span>'
-          : '<span class="status-tag">未开通</span>';
-        var action = info.enabled
-          ? '<button class="btn sm" type="button" data-act="update-region" data-id="' + s.id + '" data-region="' + r.key + '">更新 Token</button>'
-          : '—';
-        return '<tr>' +
-          '<td>' + r.name + '</td>' +
-          '<td><code class="token-mask">' + (info.enabled ? maskToken(info.token) : '—') + '</code></td>' +
-          '<td>' + statusHtml + '</td>' +
-          '<td>' + action + '</td>' +
-          '</tr>';
-      }).join('');
-
-      var open = openIds.has(s.id);
-      return '<article class="store-card' + (open ? ' is-open' : '') + '" data-id="' + s.id + '">' +
-        '<div class="store-card-main">' +
-          '<div>' +
-            '<div class="col-title">物理店铺</div>' +
-            '<div class="store-name">' + escapeHtml(s.alias) + '</div>' +
-            '<div class="meta-line">官方店铺 ID：<strong>' + escapeHtml(s.shopId || '—') + '</strong></div>' +
-            '<div class="meta-line">官方店铺名称：<strong>' + escapeHtml(s.shopName || '—') + '</strong></div>' +
-            '<div class="meta-line">关联公司：' + escapeHtml(s.company) + '</div>' +
-            '<span class="mode-tag">' + escapeHtml(s.mode) + '</span>' +
-          '</div>' +
-          '<div>' +
-            '<div class="col-title">商品 / 库存 Token</div>' +
-            '<div class="product-status">' +
-              '<span class="dot ' + statusClass(s.productStatus) + '"></span>' +
-              '<span>' + escapeHtml(s.productStatus) + '</span>' +
-            '</div>' +
-            '<div style="margin-top:8px"><code class="token-mask">' + maskToken(s.productToken) + '</code></div>' +
-          '</div>' +
-          '<div>' +
-            '<div class="col-title">站点与订单 Token</div>' +
-            '<div class="region-tags">' + tags + '</div>' +
-            '<div class="meta-line">更新时间：' + escapeHtml(s.updatedAt || '—') + '</div>' +
-          '</div>' +
-          '<div class="store-actions">' +
-            '<button class="btn sm" type="button" data-act="toggle" data-id="' + s.id + '">' + (open ? '收起明细' : '展开明细') + '</button>' +
-            '<button class="btn sm primary" type="button" data-act="edit" data-id="' + s.id + '">编辑授权</button>' +
-          '</div>' +
-        '</div>' +
-        '<div class="expand-panel">' +
-          '<table class="region-detail-table">' +
-            '<thead><tr><th>区域站点</th><th>订单 Token</th><th>联通状态</th><th>操作</th></tr></thead>' +
-            '<tbody>' + detailRows + '</tbody>' +
-          '</table>' +
-        '</div>' +
-      '</article>';
-    }).join('');
+    toast._t = setTimeout(function () { el.hidden = true; }, 2400);
   }
 
   function escapeHtml(str) {
@@ -143,85 +48,143 @@
       .replace(/"/g, '&quot;');
   }
 
+  function maskToken(token) {
+    if (!token) return '—';
+    if (token.length <= 12) return token.slice(0, 4) + '****';
+    return token.slice(0, 12) + '****';
+  }
+
+  function statusClass(status) {
+    if (status === '正常拉取' || status === '校验通过' || status === '已开通' || status === '连通正常') return 'ok';
+    if (status === 'Token 异常' || status === '未校验') return 'warn';
+    if (status === '校验失败') return 'err';
+    return 'off';
+  }
+
+  function siteMeta(key) {
+    return sites.find(function (s) { return s.key === key; }) || { short: key, name: key, defaultWarehouse: '—' };
+  }
+
+  function buildStoreName(prefix, siteKey) {
+    return prefix + '-' + siteMeta(siteKey).short + '店';
+  }
+
+  function formatNow() {
+    var d = new Date();
+    function p(n) { return n < 10 ? '0' + n : '' + n; }
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' +
+      p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  function filteredStores() {
+    var keyword = ($('filterKeyword').value || '').trim().toLowerCase();
+    var site = $('filterSite').value;
+    var orderStatus = $('filterOrderStatus').value;
+    return stores.filter(function (s) {
+      if (site && s.siteKey !== site) return false;
+      if (orderStatus && s.orderStatus !== orderStatus) return false;
+      if (!keyword) return true;
+      var text = [s.name, s.parentPrefix, s.shopId, s.officialName, s.warehouse].join(' ').toLowerCase();
+      return text.indexOf(keyword) >= 0;
+    });
+  }
+
+  function renderTable() {
+    var list = filteredStores();
+    $('totalCount').textContent = String(list.length);
+    var tbody = $('storeTableBody');
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="10"><div class="empty">暂无独立站点店铺</div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(function (s) {
+      var meta = siteMeta(s.siteKey);
+      return '<tr>' +
+        '<td>' +
+          '<div class="store-title">' + escapeHtml(s.name) + '</div>' +
+          '<div class="store-sub">' + escapeHtml(s.mode) + ' · ' + escapeHtml(s.company) + '</div>' +
+          '<span class="group-chip">父组 ' + escapeHtml(s.parentGroupId) + '</span>' +
+        '</td>' +
+        '<td>' + escapeHtml(s.parentPrefix) + '</td>' +
+        '<td><span class="site-pill ' + s.siteKey + '">' + escapeHtml(meta.short) + '</span></td>' +
+        '<td>' +
+          '<div>' + escapeHtml(s.shopId) + '</div>' +
+          '<div class="store-sub">' + escapeHtml(s.officialName || '—') + '</div>' +
+        '</td>' +
+        '<td>' +
+          '<div style="margin-bottom:6px"><span class="status-tag ' + statusClass(s.productStatus) + '"><span class="dot"></span>' + escapeHtml(s.productStatus) + '</span></div>' +
+          '<code class="token-mask">' + maskToken(s.productToken) + '</code>' +
+          '<div class="store-sub" style="margin-top:4px">全站点共享</div>' +
+        '</td>' +
+        '<td>' +
+          '<code class="token-mask">' + maskToken(s.orderToken) + '</code>' +
+        '</td>' +
+        '<td>' + escapeHtml(s.warehouse) + '</td>' +
+        '<td><span class="status-tag ' + statusClass(s.orderStatus) + '"><span class="dot"></span>' + escapeHtml(s.orderStatus) + '</span></td>' +
+        '<td><span class="status-tag ' + statusClass(s.financeBoard) + '">' + escapeHtml(s.financeBoard) + '</span></td>' +
+        '<td><div class="cell-actions">' +
+          '<button class="btn link" type="button" data-act="update-token" data-id="' + s.id + '">更新订单 Token</button>' +
+          '<button class="btn link" type="button" data-act="bind-warehouse" data-id="' + s.id + '">绑定仓库</button>' +
+        '</div></td>' +
+      '</tr>';
+    }).join('');
+  }
+
   function setStep(step) {
     currentStep = step;
     $('step1').hidden = step !== 1;
     $('step2').hidden = step !== 2;
     $('btnPrevStep').hidden = step === 1;
     $('btnNextStep').hidden = step !== 1;
-    $('btnSaveAuth').hidden = step !== 2;
+    $('btnSaveBatch').hidden = step !== 2;
     document.querySelectorAll('.step-item').forEach(function (el) {
       var n = Number(el.dataset.step);
       el.classList.toggle('active', n === step);
       el.classList.toggle('done', n < step);
     });
+    if (step === 2) {
+      renderSiteCards();
+      updatePreview();
+    }
   }
 
-  function openModal(store) {
-    editingId = store ? store.id : null;
-    draft = store ? cloneStore(store) : emptyDraft();
-    $('modalTitle').textContent = store ? '编辑 Temu 店铺授权' : '新增 Temu 店铺授权';
-    $('inputAlias').value = draft.alias || '';
-    $('inputMode').value = draft.mode || '';
-    $('inputCompany').value = draft.company || '云易盒科技有限公司';
-    $('inputProductToken').value = draft.productToken || '';
+  function openBatchModal() {
+    draft = emptyDraft();
+    editingStoreId = null;
+    $('inputPrefix').value = '';
+    $('inputMode').value = '';
+    $('inputCompany').value = '云易盒科技有限公司';
+    $('inputProductToken').value = '';
     syncProductMeta();
-    renderRegionCards();
     setStep(1);
     $('authModal').hidden = false;
   }
 
-  function closeModal() {
+  function closeBatchModal() {
     $('authModal').hidden = true;
-    editingId = null;
-    draft = emptyDraft();
   }
 
   function syncProductMeta() {
-    var ok = draft.productStatus === '校验通过' && draft.shopId;
+    var ok = draft.productStatus === '校验通过' && draft.merchantId;
     $('productFetchMeta').hidden = !ok;
-    $('fetchedShopId').textContent = draft.shopId || '—';
-    $('fetchedShopName').textContent = draft.shopName || '—';
-    var statusEl = $('productVerifyStatus');
-    statusEl.textContent = draft.productStatus === '校验通过' ? '✓ 校验通过' : draft.productStatus;
-    statusEl.className = 'status-tag ' + statusClass(draft.productStatus);
+    $('fetchedMerchantId').textContent = draft.merchantId || '—';
+    $('fetchedShopName').textContent = draft.officialName || '—';
+    var el = $('productVerifyStatus');
+    el.textContent = draft.productStatus === '校验通过' ? '✓ 校验通过' : draft.productStatus;
+    el.className = 'status-tag ' + statusClass(draft.productStatus);
   }
 
-  function renderRegionCards() {
-    $('regionCards').innerHTML = regions.map(function (r) {
-      var info = draft.regions[r.key] || { enabled: false, token: '', status: '未开通' };
-      var enabled = !!info.enabled;
-      var status = enabled ? (info.status || '未测试') : '未开通';
-      var statusCls = enabled ? statusClass(status === '未测试' ? '未校验' : status) : 'off';
-      var statusText = !enabled ? '未开通' : (status === '连通正常' ? '✓ 连通正常' : (status === '校验失败' ? '✕ 校验失败' : (status === '授权过期' ? '⚠ 授权过期' : status)));
-      return '<div class="region-card' + (enabled ? ' enabled' : '') + '" data-region="' + r.key + '">' +
-        '<div class="region-status"><span class="status-tag ' + statusCls + '">' + statusText + '</span></div>' +
-        '<div class="region-card-head">' +
-          '<label class="region-check">' +
-            '<input type="checkbox" data-region-check="' + r.key + '"' + (enabled ? ' checked' : '') + ' />' +
-            '<span><div class="region-title">' + r.name + '</div><div class="region-host">' + r.host + '</div></span>' +
-          '</label>' +
-        '</div>' +
-        '<div class="region-body">' +
-          '<input class="form-input" data-region-token="' + r.key + '" placeholder="粘贴该区域专属订单 Token" maxlength="128" ' +
-            (enabled ? '' : 'disabled ') + 'value="' + escapeHtml(info.token || '') + '" />' +
-          '<button class="btn" type="button" data-region-test="' + r.key + '"' + (enabled ? '' : ' disabled') + '>测试连接</button>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-  }
-
-  function readStep1IntoDraft() {
-    draft.alias = ($('inputAlias').value || '').trim();
+  function readStep1() {
+    draft.prefix = ($('inputPrefix').value || '').trim();
     draft.mode = $('inputMode').value;
     draft.company = $('inputCompany').value;
     draft.productToken = ($('inputProductToken').value || '').trim();
   }
 
   function validateStep1() {
-    readStep1IntoDraft();
-    if (!draft.alias || draft.alias.length < 2) {
-      toast('请填写自定义店铺名称（至少 2 个字符）', 'error');
+    readStep1();
+    if (!draft.prefix || draft.prefix.length < 2) {
+      toast('请填写主店铺 / 品牌前缀', 'error');
       return false;
     }
     if (!draft.mode) {
@@ -229,41 +192,100 @@
       return false;
     }
     if (!draft.productToken) {
-      toast('请填写商品 / 库存 Token', 'error');
+      toast('请填写全局商品 Token', 'error');
       return false;
     }
-    if (draft.productStatus !== '校验通过' || !draft.shopId) {
+    if (draft.productStatus !== '校验通过' || !draft.merchantId) {
       toast('请先校验商品 Token', 'error');
       return false;
     }
     return true;
   }
 
+  function renderSiteCards() {
+    $('siteCards').innerHTML = sites.map(function (s) {
+      var info = draft.sites[s.key];
+      var enabled = !!info.enabled;
+      var genName = draft.prefix ? buildStoreName(draft.prefix, s.key) : ('前缀-' + s.short + '店');
+      var statusText = !enabled ? '未勾选' : (info.orderStatus === '连通正常' ? '✓ 连通正常' : (info.orderStatus === '校验失败' ? '✕ 校验失败' : '待测试'));
+      var statusCls = !enabled ? 'off' : statusClass(info.orderStatus === '连通正常' ? '正常拉取' : (info.orderStatus === '校验失败' ? '校验失败' : '未校验'));
+      return '<div class="site-card' + (enabled ? ' enabled' : '') + '">' +
+        '<div class="site-card-head">' +
+          '<label class="site-check">' +
+            '<input type="checkbox" data-site-check="' + s.key + '"' + (enabled ? ' checked' : '') + ' />' +
+            '<span>' +
+              '<div class="site-title">' + s.name + '</div>' +
+              '<div class="site-host">' + s.host + '</div>' +
+              '<div class="site-gen-name">将生成独立店铺：' + escapeHtml(genName) + '</div>' +
+            '</span>' +
+          '</label>' +
+          '<span class="status-tag ' + statusCls + '">' + statusText + '</span>' +
+        '</div>' +
+        '<div class="site-body">' +
+          '<div class="site-body-row">' +
+            '<input class="form-input" data-site-token="' + s.key + '" placeholder="粘贴该站点订单 Token" maxlength="128" ' +
+              (enabled ? '' : 'disabled ') + 'value="' + escapeHtml(info.orderToken || '') + '" />' +
+            '<button class="btn" type="button" data-site-test="' + s.key + '"' + (enabled ? '' : ' disabled') + '>测试连接</button>' +
+          '</div>' +
+          '<div class="site-body-row">' +
+            '<span class="form-help" style="min-width:70px">关联仓库</span>' +
+            '<select class="form-input wh-select" data-site-warehouse="' + s.key + '"' + (enabled ? '' : ' disabled') + '>' +
+              warehouseOptions(info.warehouse) +
+            '</select>' +
+            '<span class="form-help">订单进入该站点店铺后，从此仓库扣库存</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function warehouseOptions(selected) {
+    var options = ['美西仓', '美东仓', '德国仓', '英国仓', '华南中转仓', '深圳仓'];
+    return options.map(function (w) {
+      return '<option value="' + w + '"' + (w === selected ? ' selected' : '') + '>' + w + '</option>';
+    }).join('');
+  }
+
+  function updatePreview() {
+    var names = [];
+    sites.forEach(function (s) {
+      if (draft.sites[s.key].enabled) names.push(buildStoreName(draft.prefix || '前缀', s.key));
+    });
+    var box = $('previewBox');
+    if (!names.length) {
+      box.hidden = true;
+      return;
+    }
+    box.hidden = false;
+    box.innerHTML = '保存后将批量创建 <strong>' + names.length + '</strong> 个独立站点店铺：' + names.map(escapeHtml).join('、') +
+      '。商品 Token 自动共享，订单/仓库/财务按站点隔离。';
+  }
+
   function validateStep2() {
-    var enabledCount = 0;
-    for (var i = 0; i < regions.length; i++) {
-      var key = regions[i].key;
-      var info = draft.regions[key];
+    var count = 0;
+    for (var i = 0; i < sites.length; i++) {
+      var key = sites[i].key;
+      var info = draft.sites[key];
       if (!info.enabled) continue;
-      enabledCount += 1;
-      if (!info.token) {
-        toast('请填写「' + regions[i].short + '」订单 Token', 'error');
+      count += 1;
+      if (!info.orderToken) {
+        toast('请填写「' + sites[i].short + '」订单 Token', 'error');
         return false;
       }
-      if (info.status !== '连通正常') {
-        toast('请先测试「' + regions[i].short + '」连接，并确保连通正常', 'error');
+      if (info.orderStatus !== '连通正常') {
+        toast('请先测试「' + sites[i].short + '」连接', 'error');
         return false;
       }
     }
-    if (!enabledCount) {
-      toast('请至少勾选一个已开通区域', 'error');
+    if (!count) {
+      toast('请至少勾选一个要生成的站点', 'error');
       return false;
     }
     return true;
   }
 
   function verifyProductToken() {
-    readStep1IntoDraft();
+    readStep1();
     if (!draft.productToken) {
       toast('请先粘贴商品 Token', 'error');
       return;
@@ -276,154 +298,208 @@
       btn.textContent = '校验 Token';
       if (draft.productToken.length < 8) {
         draft.productStatus = '校验失败';
-        draft.shopId = '';
-        draft.shopName = '';
+        draft.merchantId = '';
+        draft.officialName = '';
         syncProductMeta();
-        toast('Token 校验失败，请检查后重试', 'error');
+        toast('商品 Token 校验失败', 'error');
         return;
       }
       draft.productStatus = '校验通过';
-      draft.shopId = draft.shopId || ('TEMU-' + String(100000 + Math.floor(Math.random() * 899999)));
-      draft.shopName = draft.shopName || (draft.alias ? draft.alias.replace(/-\d+$/, '') + ' Official' : 'Temu Official Shop');
+      draft.merchantId = 'MCH-' + String(100000 + Math.floor(Math.random() * 899999));
+      draft.officialName = (draft.prefix || 'Temu') + ' Official';
       syncProductMeta();
-      toast('商品 Token 校验通过，已回填店铺信息', 'success');
+      toast('校验通过：商品 Token 将自动下发给所选站点店铺', 'success');
     }, 700);
   }
 
-  function testRegion(key) {
-    var info = draft.regions[key];
+  function testSite(key) {
+    var info = draft.sites[key];
     if (!info || !info.enabled) return;
-    var tokenInput = document.querySelector('[data-region-token="' + key + '"]');
-    info.token = tokenInput ? tokenInput.value.trim() : info.token;
-    if (!info.token) {
-      toast('请先粘贴该区域订单 Token', 'error');
+    var input = document.querySelector('[data-site-token="' + key + '"]');
+    info.orderToken = input ? input.value.trim() : info.orderToken;
+    if (!info.orderToken) {
+      toast('请先粘贴该站点订单 Token', 'error');
       return;
     }
-    var btn = document.querySelector('[data-region-test="' + key + '"]');
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = '测试中…';
-    }
+    var btn = document.querySelector('[data-site-test="' + key + '"]');
+    if (btn) { btn.disabled = true; btn.textContent = '测试中…'; }
     setTimeout(function () {
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = '测试连接';
-      }
-      if (/fail|过期|invalid/i.test(info.token)) {
-        info.status = '校验失败';
-        toast('区域连接校验失败', 'error');
-      } else if (/expire|expired/i.test(info.token)) {
-        info.status = '授权过期';
-        toast('该区域 Token 已过期', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = '测试连接'; }
+      if (/fail|invalid/i.test(info.orderToken)) {
+        info.orderStatus = '校验失败';
+        toast('站点连接校验失败', 'error');
       } else {
-        info.status = '连通正常';
-        toast('区域连接测试成功', 'success');
+        info.orderStatus = '连通正常';
+        toast('站点连接测试成功', 'success');
       }
-      renderRegionCards();
+      renderSiteCards();
+      updatePreview();
     }, 650);
   }
 
-  function saveAuth() {
+  function saveBatch() {
     if (!validateStep2()) return;
+    var groupId = 'PG-' + Date.now().toString().slice(-6);
     var now = formatNow();
-    if (editingId) {
-      var idx = stores.findIndex(function (s) { return s.id === editingId; });
-      if (idx >= 0) {
-        stores[idx] = Object.assign({}, draft, { id: editingId, updatedAt: now });
-      }
-      toast('授权配置已更新', 'success');
-    } else {
-      var id = Date.now();
-      stores.unshift(Object.assign({}, draft, { id: id, updatedAt: now }));
-      toast('授权配置已保存，已启动对应区域订单拉取任务', 'success');
-    }
-    closeModal();
-    renderList();
+    var created = [];
+    sites.forEach(function (s, index) {
+      var info = draft.sites[s.key];
+      if (!info.enabled) return;
+      var store = {
+        id: Date.now() + index,
+        parentPrefix: draft.prefix,
+        parentGroupId: groupId,
+        name: buildStoreName(draft.prefix, s.key),
+        siteKey: s.key,
+        mode: draft.mode,
+        company: draft.company,
+        shopId: 'TEMU-' + s.short.toUpperCase().replace('区', '') + '-' + String(100000 + Math.floor(Math.random() * 899999)),
+        officialName: draft.officialName,
+        productToken: draft.productToken,
+        productStatus: '校验通过',
+        orderToken: info.orderToken,
+        orderStatus: '正常拉取',
+        warehouse: info.warehouse || s.defaultWarehouse,
+        financeBoard: '已开通',
+        updatedAt: now
+      };
+      created.push(store);
+      stores.unshift(store);
+    });
+    closeBatchModal();
+    renderTable();
+    toast('已批量创建 ' + created.length + ' 个独立站点店铺：' + created.map(function (x) { return x.name; }).join('、'), 'success');
   }
 
-  function formatNow() {
-    var d = new Date();
-    function p(n) { return n < 10 ? '0' + n : '' + n; }
-    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' +
-      p(d.getHours()) + ':' + p(d.getMinutes());
+  function openTokenModal(store) {
+    editingStoreId = store.id;
+    $('tokenModalSubtitle').textContent = store.name + ' · 商品 Token 共享，仅更新本站点订单 Token';
+    $('inputOrderTokenEdit').value = store.orderToken || '';
+    $('tokenModal').hidden = false;
+  }
+
+  function closeTokenModal() {
+    $('tokenModal').hidden = true;
+    editingStoreId = null;
   }
 
   function bind() {
-    $('btnSearch').addEventListener('click', renderList);
+    $('btnSearch').addEventListener('click', renderTable);
     $('btnReset').addEventListener('click', function () {
       $('filterKeyword').value = '';
-      $('filterMode').value = '';
-      $('filterProductToken').value = '';
-      renderList();
+      $('filterSite').value = '';
+      $('filterOrderStatus').value = '';
+      renderTable();
     });
-    $('btnAddStore').addEventListener('click', function () { openModal(null); });
-    $('btnCloseModal').addEventListener('click', closeModal);
-    $('btnCancelModal').addEventListener('click', closeModal);
+    $('btnBatchAuth').addEventListener('click', openBatchModal);
+    $('btnCloseModal').addEventListener('click', closeBatchModal);
+    $('btnCancelModal').addEventListener('click', closeBatchModal);
     $('btnVerifyProduct').addEventListener('click', verifyProductToken);
     $('btnNextStep').addEventListener('click', function () {
       if (!validateStep1()) return;
       setStep(2);
     });
     $('btnPrevStep').addEventListener('click', function () { setStep(1); });
-    $('btnSaveAuth').addEventListener('click', saveAuth);
+    $('btnSaveBatch').addEventListener('click', saveBatch);
 
-    $('regionCards').addEventListener('change', function (e) {
-      var check = e.target.closest('[data-region-check]');
-      if (!check) return;
-      var key = check.getAttribute('data-region-check');
-      draft.regions[key].enabled = check.checked;
-      if (!check.checked) {
-        draft.regions[key].status = '未开通';
-      } else if (!draft.regions[key].token) {
-        draft.regions[key].status = '未测试';
+    $('inputPrefix').addEventListener('input', function () {
+      draft.prefix = this.value.trim();
+      if (currentStep === 2) {
+        renderSiteCards();
+        updatePreview();
       }
-      renderRegionCards();
     });
 
-    $('regionCards').addEventListener('input', function (e) {
-      var input = e.target.closest('[data-region-token]');
+    $('siteCards').addEventListener('change', function (e) {
+      var check = e.target.closest('[data-site-check]');
+      var wh = e.target.closest('[data-site-warehouse]');
+      if (check) {
+        var key = check.getAttribute('data-site-check');
+        draft.sites[key].enabled = check.checked;
+        if (!check.checked) draft.sites[key].orderStatus = '未开通';
+        else if (draft.sites[key].orderStatus === '未开通') draft.sites[key].orderStatus = '未测试';
+        renderSiteCards();
+        updatePreview();
+      }
+      if (wh) {
+        draft.sites[wh.getAttribute('data-site-warehouse')].warehouse = wh.value;
+      }
+    });
+
+    $('siteCards').addEventListener('input', function (e) {
+      var input = e.target.closest('[data-site-token]');
       if (!input) return;
-      var key = input.getAttribute('data-region-token');
-      draft.regions[key].token = input.value.trim();
-      if (draft.regions[key].enabled && draft.regions[key].status === '连通正常') {
-        draft.regions[key].status = '未测试';
-        renderRegionCards();
+      var key = input.getAttribute('data-site-token');
+      draft.sites[key].orderToken = input.value.trim();
+      if (draft.sites[key].orderStatus === '连通正常') {
+        draft.sites[key].orderStatus = '未测试';
+        renderSiteCards();
+        updatePreview();
       }
     });
 
-    $('regionCards').addEventListener('click', function (e) {
-      var btn = e.target.closest('[data-region-test]');
+    $('siteCards').addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-site-test]');
       if (!btn) return;
-      testRegion(btn.getAttribute('data-region-test'));
+      testSite(btn.getAttribute('data-site-test'));
     });
 
-    $('storeList').addEventListener('click', function (e) {
+    $('storeTableBody').addEventListener('click', function (e) {
       var btn = e.target.closest('[data-act]');
       if (!btn) return;
       var id = Number(btn.dataset.id);
       var store = stores.find(function (s) { return s.id === id; });
       if (!store) return;
-      var act = btn.dataset.act;
-      if (act === 'toggle') {
-        if (openIds.has(id)) openIds.delete(id);
-        else openIds.add(id);
-        renderList();
-      } else if (act === 'edit') {
-        openModal(store);
-      } else if (act === 'update-region') {
-        openModal(store);
-        setTimeout(function () {
-          if (validateStep1()) setStep(2);
-          else setStep(1);
-        }, 0);
+      if (btn.dataset.act === 'update-token') openTokenModal(store);
+      if (btn.dataset.act === 'bind-warehouse') {
+        var next = prompt('为「' + store.name + '」绑定履约仓库', store.warehouse || '');
+        if (next === null) return;
+        next = next.trim();
+        if (!next) {
+          toast('仓库名称不能为空', 'error');
+          return;
+        }
+        store.warehouse = next;
+        store.updatedAt = formatNow();
+        renderTable();
+        toast('仓库绑定已更新：订单将从此仓库扣库存', 'success');
       }
     });
 
+    $('btnCloseTokenModal').addEventListener('click', closeTokenModal);
+    $('btnCancelTokenModal').addEventListener('click', closeTokenModal);
+    $('btnTestOrderToken').addEventListener('click', function () {
+      var token = ($('inputOrderTokenEdit').value || '').trim();
+      if (!token) {
+        toast('请填写订单 Token', 'error');
+        return;
+      }
+      toast(/fail/i.test(token) ? '连接校验失败' : '连接测试成功', /fail/i.test(token) ? 'error' : 'success');
+    });
+    $('btnSaveOrderToken').addEventListener('click', function () {
+      var store = stores.find(function (s) { return s.id === editingStoreId; });
+      if (!store) return;
+      var token = ($('inputOrderTokenEdit').value || '').trim();
+      if (!token) {
+        toast('请填写订单 Token', 'error');
+        return;
+      }
+      store.orderToken = token;
+      store.orderStatus = /fail|invalid/i.test(token) ? 'Token 异常' : '正常拉取';
+      store.updatedAt = formatNow();
+      closeTokenModal();
+      renderTable();
+      toast('订单 Token 已更新', 'success');
+    });
+
     $('authModal').addEventListener('click', function (e) {
-      if (e.target === $('authModal')) closeModal();
+      if (e.target === $('authModal')) closeBatchModal();
+    });
+    $('tokenModal').addEventListener('click', function (e) {
+      if (e.target === $('tokenModal')) closeTokenModal();
     });
   }
 
   bind();
-  renderList();
+  renderTable();
 })();
