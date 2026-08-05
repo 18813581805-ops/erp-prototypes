@@ -424,7 +424,9 @@
       var opsHtml =
         '<button class="table-action-link" data-op="详情" data-id="' + s.id + '" type="button">详情</button>' +
         '<button class="table-action-link" data-op="编辑" data-id="' + s.id + '" type="button">编辑</button>' +
-        '<button class="table-action-link" data-op="立即授权" data-id="' + s.id + '" type="button">立即授权 ▾</button>' +
+        (supportsQuickAuth(s.platform)
+          ? '<button class="table-action-link" data-op="立即授权" data-id="' + s.id + '" type="button">立即授权 ▾</button>'
+          : '') +
         '<button class="table-action-more" data-op="更多" data-id="' + s.id + '" type="button">更多 ▾</button>';
       var shopeeExt = '—';
       if (s.platform === 'Shopee') {
@@ -562,6 +564,14 @@
     return ['Amazon', 'Shopee', 'AliExpress', 'Lazada', 'TikTok Shop', 'Temu', 'Ozon', '1688'].indexOf(platform) >= 0;
   }
 
+  function isMiscOtherPlatform(platform) {
+    return ['京东', '抖音', '美客多', '沃尔玛', 'Wish', '阿里巴巴国际', 'B2C', 'Shopify', 'Wildberries'].indexOf(platform) >= 0;
+  }
+
+  function supportsQuickAuth(platform) {
+    return !isMiscOtherPlatform(platform);
+  }
+
   function authOptionsForPlatform(platform) {
     if (platform === 'Amazon' || platform === 'TikTok Shop') {
       return ['store', 'ad'];
@@ -653,6 +663,10 @@
 
   function startQuickAuth(store, authType) {
     if (!store) return;
+    if (!supportsQuickAuth(store.platform)) {
+      toast(store.platform + ' 不支持立即授权', 'error');
+      return;
+    }
 
     var platform = store.platform;
     var allowed = authOptionsForPlatform(platform);
@@ -1102,7 +1116,7 @@
   }
 
   function platformRequiresManualShopMeta(platform) {
-    return ['Amazon', 'AliExpress', 'Temu', 'Ozon', '淘宝', '天猫'].indexOf(platform) >= 0;
+    return ['Amazon', 'AliExpress', 'Temu', 'Ozon', '淘宝', '天猫', '京东', '抖音', '美客多', '沃尔玛', 'Wish', '阿里巴巴国际', 'B2C', 'Shopify', 'Wildberries'].indexOf(platform) >= 0;
   }
 
   function updateCreatePlatformFields() {
