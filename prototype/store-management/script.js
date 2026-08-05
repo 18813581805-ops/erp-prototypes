@@ -29,7 +29,7 @@
   var TEMU_ACCESS_TOKEN_MAX = 128;
   var TEMU_APP_KEY_MAX = 64;
   var TEMU_APP_SECRET_MAX = 64;
-  // 阿里系 session/access_token 常见约 50~64 位，上限对齐现有 access_token 限制
+  // 1688 session/access_token 常见约 50~64 位，上限对齐现有 access_token 限制
   var ALIBABA_ACCESS_TOKEN_MAX = 128;
   var TEMU_TOKEN_INPUT_IDS = {
     editOrderAccessToken: TEMU_ACCESS_TOKEN_MAX,
@@ -334,7 +334,7 @@
     if (!('isMall' in store)) store.isMall = false;
     if (isTemuPlatform(store.platform)) ensureTemuTokens(store);
     if (isOzonPlatform(store.platform)) ensureOzonAuth(store);
-    if (isAlibabaFamilyPlatform(store.platform)) ensureAlibabaAuth(store);
+    if (is1688Platform(store.platform)) ensureAlibabaAuth(store);
     ensureOperationLogs(store);
     (store.paymentAccounts || []).forEach(function(account) {
       if (account.platform && paymentPlatformOptions.indexOf(account.platform) === -1) paymentPlatformOptions.push(account.platform);
@@ -380,10 +380,8 @@
 
     filteredStores = window.STORE_DATA.filter(function(s) {
       var text = [s.name, s.alias, s.subName, s.platformShopName].join(' ').toLowerCase();
-      if (activePlatform === '阿里系') {
-        if (!isAlibabaFamilyPlatform(s.platform)) return false;
-      } else if (activePlatform === '其他平台') {
-        if (isNamedPlatformTab(s.platform) || isAlibabaFamilyPlatform(s.platform)) return false;
+      if (activePlatform === '其他平台') {
+        if (isNamedPlatformTab(s.platform)) return false;
       } else if (activePlatform !== '全部平台' && s.platform !== activePlatform) {
         return false;
       }
@@ -524,12 +522,20 @@
     }
   }
 
+  function is1688Platform(platform) {
+    return platform === '1688';
+  }
+
   function isAlibabaFamilyPlatform(platform) {
-    return ['1688', '淘宝', '天猫'].indexOf(platform) >= 0;
+    return is1688Platform(platform);
+  }
+
+  function isAmazonLikeAuthPlatform(platform) {
+    return platform === 'Amazon' || platform === '淘宝' || platform === '天猫';
   }
 
   function hidesStoreType(platform) {
-    return isOzonPlatform(platform) || isAlibabaFamilyPlatform(platform);
+    return isOzonPlatform(platform) || is1688Platform(platform);
   }
 
   function ensureAlibabaAuth(store) {
@@ -557,11 +563,11 @@
   }
 
   function isNamedPlatformTab(platform) {
-    return ['Amazon', 'Shopee', 'AliExpress', 'Lazada', 'TikTok Shop', 'Temu', 'Ozon'].indexOf(platform) >= 0;
+    return ['Amazon', 'Shopee', 'AliExpress', 'Lazada', 'TikTok Shop', 'Temu', 'Ozon', '1688', '淘宝', '天猫'].indexOf(platform) >= 0;
   }
 
   function authOptionsForPlatform(platform) {
-    if (platform === 'Amazon' || platform === 'TikTok Shop') {
+    if (isAmazonLikeAuthPlatform(platform) || platform === 'TikTok Shop') {
       return ['store', 'ad'];
     }
     if (platform === 'Shopee') {
@@ -594,8 +600,14 @@
       Lazada: { store: 'https://auth.lazada.com/oauth/authorize' },
       AliExpress: { store: 'https://oauth.aliexpress.com/authorize' },
       '1688': { store: 'https://auth.1688.com/oauth/authorize' },
-      '淘宝': { store: 'https://oauth.taobao.com/authorize' },
-      '天猫': { store: 'https://oauth.taobao.com/authorize' }
+      '淘宝': {
+        store: 'https://oauth.taobao.com/authorize',
+        ad: 'https://ad.alimama.com/authorize'
+      },
+      '天猫': {
+        store: 'https://oauth.taobao.com/authorize',
+        ad: 'https://ad.alimama.com/authorize'
+      }
     };
     var platformMap = map[platform] || {};
     return platformMap[authType] || ('https://example.com/' + encodeURIComponent(platform) + '/' + authType + '-auth');
@@ -607,7 +619,7 @@
   }
 
   function supportsAdAuth(platform) {
-    return platform === 'Amazon' || platform === 'Shopee' || platform === 'TikTok Shop';
+    return isAmazonLikeAuthPlatform(platform) || platform === 'Shopee' || platform === 'TikTok Shop';
   }
 
   function fillRowAuthMenu(menu, platform) {
@@ -681,7 +693,7 @@
       enterOzonAuthEdit(true);
       return;
     }
-    if (authType === 'store' && isAlibabaFamilyPlatform(platform)) {
+    if (authType === 'store' && is1688Platform(platform)) {
       openDetail(store);
       activateDetailTab('auth');
       enterAlibabaAuthEdit(true);
@@ -1100,7 +1112,7 @@
   }
 
   function platformRequiresManualShopMeta(platform) {
-    return ['Amazon', 'AliExpress', 'Temu', 'Ozon'].indexOf(platform) >= 0;
+    return ['Amazon', 'AliExpress', 'Temu', 'Ozon', '淘宝', '天猫'].indexOf(platform) >= 0;
   }
 
   function updateCreatePlatformFields() {
@@ -1498,10 +1510,10 @@
 
     var isTemu = isTemuPlatform(store.platform);
     var isOzon = isOzonPlatform(store.platform);
-    var isAlibaba = isAlibabaFamilyPlatform(store.platform);
+    var is1688 = is1688Platform(store.platform);
     $('temuAuthCard').hidden = !isTemu;
-    $('alibabaAuthCard').hidden = !isAlibaba;
-    $('genericAuthCard').hidden = isOzon || isTemu || isAlibaba;
+    $('alibabaAuthCard').hidden = !is1688;
+    $('genericAuthCard').hidden = isOzon || isTemu || is1688;
     $('ozonAuthCard').hidden = !isOzon;
     if (isTemu) {
       authOrderTokenRegion = 'us';
@@ -1529,7 +1541,7 @@
       ozonAuthEditing = false;
       ozonAuthHighlight = false;
     }
-    if (isAlibaba) {
+    if (is1688) {
       renderAlibabaAuthSummary(store);
       if (store._pendingAlibabaAuthHighlight) {
         enterAlibabaAuthEdit(true);
@@ -1667,7 +1679,7 @@
   }
 
   function shouldShowAlibabaAuthTip(store) {
-    if (!store || !isAlibabaFamilyPlatform(store.platform)) return false;
+    if (!store || !is1688Platform(store.platform)) return false;
     ensureAlibabaAuth(store);
     if (store.alibabaAuthEdited && storeHasAlibabaAuth(store)) return false;
     return !storeHasAlibabaAuth(store);
@@ -1717,7 +1729,7 @@
   }
 
   function enterAlibabaAuthEdit(withHighlight) {
-    if (!currentStore || !isAlibabaFamilyPlatform(currentStore.platform)) return;
+    if (!currentStore || !is1688Platform(currentStore.platform)) return;
     ensureAlibabaAuth(currentStore);
     alibabaAuthEditing = true;
     alibabaAuthHighlight = !!withHighlight && shouldShowAlibabaAuthTip(currentStore);
@@ -1748,7 +1760,7 @@
   }
 
   function saveAlibabaAuthInline() {
-    if (!currentStore || !isAlibabaFamilyPlatform(currentStore.platform)) return;
+    if (!currentStore || !is1688Platform(currentStore.platform)) return;
     ensureAlibabaAuth(currentStore);
     var accessToken = clampTemuField(value('inlineAlibabaAccessToken'), ALIBABA_ACCESS_TOKEN_MAX).trim();
     if (!accessToken) {
@@ -2205,7 +2217,7 @@
       var savedOrigin = editOrigin;
       var needTemuAuth = savedOrigin === 'create' && isTemuPlatform(currentStore.platform);
       var needOzonAuth = savedOrigin === 'create' && isOzonPlatform(currentStore.platform);
-      var needAlibabaAuth = savedOrigin === 'create' && isAlibabaFamilyPlatform(currentStore.platform);
+      var needAlibabaAuth = savedOrigin === 'create' && is1688Platform(currentStore.platform);
       if (needTemuAuth) currentStore._pendingTemuAuthHighlight = true;
       if (needOzonAuth) currentStore._pendingOzonAuthHighlight = true;
       if (needAlibabaAuth) currentStore._pendingAlibabaAuthHighlight = true;
