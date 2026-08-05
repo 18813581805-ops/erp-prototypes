@@ -443,7 +443,7 @@
       rows += '<td class="col-site col-site-field">' + (supportsSiteField(s.platform) ? tagHtml(s.site) : '') + '</td>';
       rows += '<td class="col-region platform-col platform-amazon">' + (s.platform === 'Amazon' ? (s.region || '—') : '—') + '</td>';
       rows += '<td class="col-region platform-col platform-temu">' + (isTemuPlatform(s.platform) ? (temuOrderRegionsText(s) || '—') : '—') + '</td>';
-      rows += '<td class="col-type">' + displayStoreType(s.storeType) + '</td>';
+      rows += '<td class="col-type col-type-field">' + (supportsStoreType(s.platform) ? displayStoreType(s.storeType) : '') + '</td>';
       rows += '<td class="col-platform-type">' + (s.platformStoreType || '—') + '</td>';
       rows += '<td class="col-sub platform-col platform-shopee">' + (s.platform === 'Shopee' ? (s.subName || '—') : '—') + '</td>';
       rows += '<td class="col-shopee-ext platform-col platform-shopee">' + shopeeExt + '</td>';
@@ -476,12 +476,14 @@
     var showTemu = activePlatform === 'Temu';
     var showMall = activePlatform === 'Shopee' || activePlatform === '全部平台';
     var showSiteCol = activePlatform === '全部平台' || supportsSiteField(activePlatform);
+    var showTypeCol = activePlatform === '全部平台' || supportsStoreType(activePlatform);
     document.querySelectorAll('.platform-shopee').forEach(function(el){ el.classList.toggle('is-hidden-col', !showShopee); });
     document.querySelectorAll('.platform-amazon').forEach(function(el){ el.classList.toggle('is-hidden-col', !showAmazon); });
     document.querySelectorAll('.platform-tiktok').forEach(function(el){ el.classList.toggle('is-hidden-col', !showTiktok); });
     document.querySelectorAll('.platform-temu').forEach(function(el){ el.classList.toggle('is-hidden-col', !showTemu); });
     document.querySelectorAll('.platform-mall').forEach(function(el){ el.classList.toggle('is-hidden-col', !showMall); });
     document.querySelectorAll('.col-site-field').forEach(function(el){ el.classList.toggle('is-hidden-col', !showSiteCol); });
+    document.querySelectorAll('.col-type-field').forEach(function(el){ el.classList.toggle('is-hidden-col', !showTypeCol); });
   }
 
   function bindTabs() {
@@ -532,8 +534,12 @@
     return is1688Platform(platform);
   }
 
+  function supportsStoreType(platform) {
+    return ['AliExpress', 'Shopee', 'Lazada', 'Temu'].indexOf(platform) >= 0;
+  }
+
   function hidesStoreType(platform) {
-    return isOzonPlatform(platform) || is1688Platform(platform);
+    return !supportsStoreType(platform);
   }
 
   function ensureAlibabaAuth(store) {
