@@ -264,10 +264,10 @@
       syncSelect('editStoreType');
       return;
     }
-    var temu = isTemuPlatform(platform);
+    var temuLike = isTemuPlatform(platform) || platform === 'AliExpress';
     var lazada = platform === 'Lazada';
     var options;
-    if (temu) {
+    if (temuLike) {
       options = [['', '请选择店铺类型'], ['全托管', '全托管'], ['半托管', '半托管']];
     } else if (lazada) {
       options = [['', '请选择店铺类型'], ['跨境', '跨境'], ['本土', '本土']];
@@ -278,7 +278,7 @@
       return '<option value="' + item[0] + '">' + item[1] + '</option>';
     }).join('');
     var val = currentValue || '';
-    if (temu) {
+    if (temuLike) {
       select.value = (val === '全托管' || val === '半托管') ? val : '';
     } else if (lazada) {
       if (val === '跨境' || val === '本土') select.value = val;
