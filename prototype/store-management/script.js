@@ -556,7 +556,7 @@
 
 
   function buildTemuAliasStackHtml(stores) {
-    return '<div class="temu-alias-stack">' + stores.map(function(s) {
+    return '<div class="temu-pair-stack">' + stores.map(function(s) {
       return '<a href="javascript:void(0)" class="temu-alias-link" data-op="详情" data-id="' + s.id + '" title="' + escapeHtml(s.region || '') + '">' +
         escapeHtml(s.alias || '—') +
       '</a>';
@@ -564,15 +564,15 @@
   }
 
   function buildTemuRegionPillsHtml(stores) {
-    return '<div class="temu-region-pills">' + stores.map(function(s) {
+    return '<div class="temu-pair-stack">' + stores.map(function(s) {
       return '<span class="temu-region-pill">' + escapeHtml(s.region || '—') + '</span>';
     }).join('') + '</div>';
   }
 
-  function buildTemuSiteOpsHtml(s) {
-    return '<button class="table-action-link" data-op="详情" data-id="' + s.id + '" type="button">详情</button>' +
-      '<button class="table-action-link" data-op="编辑" data-id="' + s.id + '" type="button">编辑</button>' +
-      '<button class="table-action-link" data-op="立即授权" data-id="' + s.id + '" type="button">授权</button>';
+  function buildTemuTimeStackHtml(stores, field) {
+    return '<div class="temu-pair-stack">' + stores.map(function(s) {
+      return '<span class="temu-time-line">' + escapeHtml(s[field] || '—') + '</span>';
+    }).join('') + '</div>';
   }
 
   function buildTemuGroupCompactHtml(groupKey, stores) {
@@ -582,16 +582,14 @@
     var storeType = supportsStoreType(stores[0].platform) ? displayStoreType(stores[0].storeType) : '';
     var bu = stores[0].bu || '—';
     var allChecked = stores.every(function(s){ return selectedIds.has(s.id); });
-    var expanded = isTemuGroupExpanded(groupKey);
     var enabledCount = stores.filter(function(s){ return s.status === '启用'; }).length;
     var authCount = stores.filter(function(s){ return s.authStatus === '已授权'; }).length;
     var statusLabel = enabledCount === stores.length ? '启用' : (enabledCount ? '部分启用' : '停用');
     var primary = stores[0];
-    var html = '<tr class="temu-group-row' + (expanded ? ' is-expanded' : '') + '" data-temu-group="' + escapeHtml(groupKey) + '">' +
+    return '<tr class="temu-group-row" data-temu-group="' + escapeHtml(groupKey) + '">' +
       '<td class="col-check"><input type="checkbox" class="temu-group-checkbox" data-temu-group="' + escapeHtml(groupKey) + '" ' + (allChecked ? 'checked' : '') + ' /></td>' +
       '<td class="col-name">' +
         '<div class="temu-main-cell">' +
-          '<button type="button" class="temu-group-toggle" data-temu-group="' + escapeHtml(groupKey) + '" aria-expanded="' + (expanded ? 'true' : 'false') + '" title="' + (expanded ? '收起区域店' : '展开区域店') + '">' + (expanded ? '▾' : '▸') + '</button>' +
           '<div class="temu-tree-content">' +
             '<span class="temu-main-name">' + escapeHtml(mainName) + '</span>' +
             '<span class="tag tag-blue temu-role-tag">主店铺</span>' +
@@ -615,37 +613,15 @@
       '<td class="col-bu">' + escapeHtml(bu) + '</td>' +
       '<td class="col-status">' + tagHtml(statusLabel, enabledCount ? 'tag-green' : 'tag-gray') + '</td>' +
       '<td class="col-auth">' + tagHtml('已授权 ' + authCount + '/' + stores.length, authCount ? 'tag-green' : 'tag-gray') + '</td>' +
-      '<td class="col-auth-time">' + escapeHtml(primary.authTime || '—') + '</td>' +
-      '<td class="col-expire">' + escapeHtml(primary.authExpire || '—') + '</td>' +
+      '<td class="col-auth-time">' + buildTemuTimeStackHtml(stores, 'authTime') + '</td>' +
+      '<td class="col-expire">' + buildTemuTimeStackHtml(stores, 'authExpire') + '</td>' +
       '<td class="col-sync">' + escapeHtml(primary.syncOrderTime || '—') + '</td>' +
       '<td class="col-ops">' + escapeHtml((primary.operator || '—') + ' / ' + (primary.cs || '—')) + '</td>' +
       '<td class="col-actions"><div class="cell-actions">' +
-        '<button class="table-action-link temu-group-toggle" data-temu-group="' + escapeHtml(groupKey) + '" type="button">' + (expanded ? '收起区域' : '管理区域') + '</button>' +
         '<button class="table-action-link" data-op="详情" data-id="' + primary.id + '" type="button">详情</button>' +
+        '<button class="table-action-link" data-op="编辑" data-id="' + primary.id + '" type="button">编辑</button>' +
       '</div></td>' +
     '</tr>';
-
-    if (expanded) {
-      html += '<tr class="temu-group-detail-row" data-temu-group="' + escapeHtml(groupKey) + '"><td colspan="22">' +
-        '<div class="temu-site-panel">' +
-          '<div class="temu-site-panel-title">区域店（仅差异字段）</div>' +
-          '<table class="temu-site-mini">' +
-            '<thead><tr><th>区域</th><th>店铺别名</th><th>授权状态</th><th>授权时间</th><th>授权到期</th><th>操作</th></tr></thead>' +
-            '<tbody>' + stores.map(function(s) {
-              return '<tr>' +
-                '<td>' + tagHtml(s.region || '—', 'tag-blue') + '</td>' +
-                '<td><a href="javascript:void(0)" class="store-name-link" data-op="详情" data-id="' + s.id + '">' + escapeHtml(s.alias || '—') + '</a></td>' +
-                '<td>' + authSummaryHtml(s) + '</td>' +
-                '<td>' + escapeHtml(s.authTime || '—') + '</td>' +
-                '<td>' + escapeHtml(s.authExpire || '—') + '</td>' +
-                '<td><div class="cell-actions">' + buildTemuSiteOpsHtml(s) + '</div></td>' +
-              '</tr>';
-            }).join('') + '</tbody>' +
-          '</table>' +
-        '</div>' +
-      '</td></tr>';
-    }
-    return html;
   }
 
   function buildStoreRowHtml(s, options) {
@@ -1329,14 +1305,6 @@
 
   function bindRowActions() {
     $('storeTableBody').addEventListener('click', function(e) {
-      var toggle = e.target.closest('.temu-group-toggle');
-      if (toggle) {
-        e.stopPropagation();
-        var groupKey = toggle.dataset.temuGroup;
-        temuGroupExpanded[groupKey] = !isTemuGroupExpanded(groupKey);
-        renderTable();
-        return;
-      }
       var btn = e.target.closest('[data-op]');
       if (!btn) return;
       e.stopPropagation();
@@ -2459,7 +2427,6 @@
           sibling.temuGroupId = currentStore.temuGroupId;
           temuSiblings.push(sibling);
         });
-        temuGroupExpanded[currentStore.temuGroupId] = true;
       } else {
         currentStore.alias = aliasInput;
         if (isNew) currentStore.name = currentStore.alias;
