@@ -581,16 +581,19 @@
 
   function buildTemuAliasStackHtml(stores) {
     return '<div class="temu-pair-stack">' + stores.map(function(s) {
-      return '<span class="temu-alias-text" title="' + escapeHtml(s.region || '') + '">' +
-        escapeHtml(s.alias || '—') +
-      '</span>';
+      return '<div class="temu-alias-row">' +
+        '<span class="temu-alias-text" title="' + escapeHtml(s.alias || '') + '">' + escapeHtml(s.alias || '—') + '</span>' +
+        (s.region ? '<span class="temu-region-pill">' + escapeHtml(s.region) + '</span>' : '') +
+      '</div>';
     }).join('') + '</div>';
   }
 
-  function buildTemuRegionPillsHtml(stores) {
-    return '<div class="temu-pair-stack">' + stores.map(function(s) {
-      return '<span class="temu-region-pill">' + escapeHtml(s.region || '—') + '</span>';
-    }).join('') + '</div>';
+  function buildTemuAliasCellHtml(store) {
+    if (!store) return '—';
+    return '<div class="temu-alias-row">' +
+      '<span class="temu-alias-text" title="' + escapeHtml(store.alias || '') + '">' + escapeHtml(store.alias || '—') + '</span>' +
+      (store.region ? '<span class="temu-region-pill">' + escapeHtml(store.region) + '</span>' : '') +
+    '</div>';
   }
 
   function buildTemuTimeStackHtml(stores, field) {
@@ -687,7 +690,6 @@
       '<td class="col-body temu-shared-cell" title="' + escapeHtml(body) + '">' + escapeHtml(body) + '</td>' +
       '<td class="col-site col-site-field temu-shared-cell"></td>' +
       '<td class="col-region platform-col platform-amazon temu-shared-cell">—</td>' +
-      '<td class="col-region platform-col platform-temu temu-stack-cell">' + buildTemuRegionPillsHtml(stores) + '</td>' +
       '<td class="col-type col-type-field temu-shared-cell">' + storeType + '</td>' +
       '<td class="col-platform-type temu-shared-cell">—</td>' +
       '<td class="col-sub platform-col platform-shopee temu-shared-cell">—</td>' +
@@ -752,11 +754,10 @@
     rows += '<tr' + rowClass + ' data-store-id="' + s.id + '"' + (options.groupKey ? ' data-temu-group="' + escapeHtml(options.groupKey) + '"' : '') + '>';
     rows += '<td class="col-check"><input type="checkbox" class="row-checkbox" data-id="' + s.id + '" ' + checked + ' /></td>';
     rows += '<td class="col-name" title="' + escapeHtml(s.name || s.alias || '—') + '">' + nameHtml + '</td>';
-    rows += '<td class="col-alias">' + escapeHtml(s.alias || '—') + '</td>';
+    rows += '<td class="col-alias">' + (isTemuPlatform(s.platform) || options.temuSingle ? buildTemuAliasCellHtml(s) : escapeHtml(s.alias || '—')) + '</td>';
     rows += '<td class="col-body" title="' + escapeHtml(s.body || '—') + '">' + escapeHtml(s.body || '—') + '</td>';
     rows += '<td class="col-site col-site-field">' + (supportsSiteField(s.platform) ? tagHtml(s.site) : '') + '</td>';
     rows += '<td class="col-region platform-col platform-amazon">' + (s.platform === 'Amazon' ? (s.region || '—') : '—') + '</td>';
-    rows += '<td class="col-region platform-col platform-temu">' + (isTemuPlatform(s.platform) ? (s.region || '—') : '—') + '</td>';
     rows += '<td class="col-type col-type-field">' + (supportsStoreType(s.platform) ? displayStoreType(s.storeType) : '') + '</td>';
     rows += '<td class="col-platform-type">' + (s.platformStoreType || '—') + '</td>';
     rows += '<td class="col-sub platform-col platform-shopee">' + (s.platform === 'Shopee' ? (s.subName || '—') : '—') + '</td>';
@@ -829,14 +830,12 @@
     var showShopee = activePlatform === 'Shopee';
     var showAmazon = activePlatform === 'Amazon';
     var showTiktok = activePlatform === 'TikTok Shop';
-    var showTemu = activePlatform === 'Temu';
     var showMall = activePlatform === 'Shopee' || activePlatform === '全部平台';
     var showSiteCol = activePlatform === '全部平台' || supportsSiteField(activePlatform);
     var showTypeCol = activePlatform === '全部平台' || supportsStoreType(activePlatform);
     document.querySelectorAll('.platform-shopee').forEach(function(el){ el.classList.toggle('is-hidden-col', !showShopee); });
     document.querySelectorAll('.platform-amazon').forEach(function(el){ el.classList.toggle('is-hidden-col', !showAmazon); });
     document.querySelectorAll('.platform-tiktok').forEach(function(el){ el.classList.toggle('is-hidden-col', !showTiktok); });
-    document.querySelectorAll('.platform-temu').forEach(function(el){ el.classList.toggle('is-hidden-col', !showTemu); });
     document.querySelectorAll('.platform-mall').forEach(function(el){ el.classList.toggle('is-hidden-col', !showMall); });
     document.querySelectorAll('.col-site-field').forEach(function(el){ el.classList.toggle('is-hidden-col', !showSiteCol); });
     document.querySelectorAll('.col-type-field').forEach(function(el){ el.classList.toggle('is-hidden-col', !showTypeCol); });
