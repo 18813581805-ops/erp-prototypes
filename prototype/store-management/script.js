@@ -135,8 +135,26 @@
     return '<span class="' + cls + '">' + label + '：' + (status || '未授权') + '</span>';
   }
 
+  function parseAuthExpireTime(value) {
+    if (!value || value === '—') return NaN;
+    var normalized = String(value).trim().replace(/-/g, '/');
+    return Date.parse(normalized);
+  }
+
+  function resolveStoreAuthStatus(store) {
+    var status = (store && store.authStatus) || '未授权';
+    if (status === '未授权') return '未授权';
+    var expireMs = parseAuthExpireTime(store && store.authExpire);
+    if (!isNaN(expireMs)) {
+      if (expireMs < Date.now()) return '已过期';
+      var daysLeft = (expireMs - Date.now()) / (24 * 60 * 60 * 1000);
+      if (daysLeft <= 30 && status === '已授权') return '即将过期';
+    }
+    return status;
+  }
+
   function authSummaryHtml(store) {
-    var items = [authPill('店铺', store.authStatus)];
+    var items = [authPill('店铺', resolveStoreAuthStatus(store))];
     if (supportsAdAuth(store.platform)) {
       items.push(authPill('广告', store.adAuthStatus));
     }
@@ -533,7 +551,7 @@
       if (body !== '全部' && s.body !== body) return false;
       if (site !== '全部' && s.site !== site) return false;
       if (status !== '全部' && s.status !== status) return false;
-      if (auth !== '全部' && s.authStatus !== auth) return false;
+      if (auth !== '全部' && resolveStoreAuthStatus(s) !== auth) return false;
       if (operator && s.operator.indexOf(operator) === -1) return false;
       if (isMain !== '全部' && (s.mainAccountId ? '是' : '否') !== isMain) return false;
       if (isSip !== '全部' && (s.isSip ? '是' : '否') !== isSip) return false;
@@ -575,6 +593,26 @@
     }).join('') + '</div>';
   }
 
+  function buildTemuMergedOrStackHtml(stores, field) {
+    var values = stores.map(function(s){ return s[field] || '—'; });
+    var allSame = values.length > 0 && values.every(function(v){ return v === values[0]; });
+    if (allSame) {
+      return '<span class="temu-shared-value">' + escapeHtml(values[0]) + '</span>';
+    }
+    return buildTemuTimeStackHtml(stores, field);
+  }
+
+  function buildTemuAuthStatusHtml(stores) {
+    var statuses = stores.map(resolveStoreAuthStatus);
+    var allSame = statuses.length > 0 && statuses.every(function(st){ return st === statuses[0]; });
+    if (allSame) {
+      return '<div class="auth-summary temu-shared-value">' + authPill('店铺', statuses[0]) + '</div>';
+    }
+    return '<div class="temu-pair-stack">' + statuses.map(function(st) {
+      return '<div class="auth-summary">' + authPill('店铺', st) + '</div>';
+    }).join('') + '</div>';
+  }
+
   function buildTemuGroupCompactHtml(groupKey, stores) {
     stores = temuRegionOrder(stores);
     var mainName = getTemuMainName(stores[0]);
@@ -583,13 +621,12 @@
     var bu = stores[0].bu || '—';
     var allChecked = stores.every(function(s){ return selectedIds.has(s.id); });
     var enabledCount = stores.filter(function(s){ return s.status === '启用'; }).length;
-    var authCount = stores.filter(function(s){ return s.authStatus === '已授权'; }).length;
     var statusLabel = enabledCount === stores.length ? '启用' : (enabledCount ? '部分启用' : '停用');
     var primary = stores[0];
-    var groupAuthStatus = authCount === stores.length ? '已授权' : (authCount === 0 ? '未授权' : (primary.authStatus || '未授权'));
+    var authTimeSame = stores.every(function(s){ return (s.authTime || '—') === (stores[0].authTime || '—'); });
     return '<tr class="temu-group-row" data-temu-group="' + escapeHtml(groupKey) + '">' +
-      '<td class="col-check"><input type="checkbox" class="temu-group-checkbox" data-temu-group="' + escapeHtml(groupKey) + '" ' + (allChecked ? 'checked' : '') + ' /></td>' +
-      '<td class="col-name">' +
+      '<td class="col-check temu-shared-cell"><input type="checkbox" class="temu-group-checkbox" data-temu-group="' + escapeHtml(groupKey) + '" ' + (allChecked ? 'checked' : '') + ' /></td>' +
+      '<td class="col-name temu-shared-cell">' +
         '<div class="temu-main-cell">' +
           '<div class="temu-tree-content">' +
             '<a href="javascript:void(0)" class="store-name-link temu-main-name" data-op="详情" data-id="' + primary.id + '">' + escapeHtml(mainName) + '</a>' +
@@ -598,27 +635,27 @@
           '</div>' +
         '</div>' +
       '</td>' +
-      '<td class="col-alias">' + buildTemuAliasStackHtml(stores) + '</td>' +
-      '<td class="col-body" title="' + escapeHtml(body) + '">' + escapeHtml(body) + '</td>' +
-      '<td class="col-site col-site-field"></td>' +
-      '<td class="col-region platform-col platform-amazon">—</td>' +
-      '<td class="col-region platform-col platform-temu">' + buildTemuRegionPillsHtml(stores) + '</td>' +
-      '<td class="col-type col-type-field">' + storeType + '</td>' +
-      '<td class="col-platform-type">—</td>' +
-      '<td class="col-sub platform-col platform-shopee">—</td>' +
-      '<td class="col-shopee-ext platform-col platform-shopee">—</td>' +
-      '<td class="col-mall platform-col platform-mall">—</td>' +
-      '<td class="col-child-count platform-col platform-shopee">—</td>' +
-      '<td class="col-ad-account platform-col platform-tiktok">—</td>' +
-      '<td class="col-bc-id platform-col platform-tiktok">—</td>' +
-      '<td class="col-bu">' + escapeHtml(bu) + '</td>' +
-      '<td class="col-status">' + tagHtml(statusLabel, enabledCount ? 'tag-green' : 'tag-gray') + '</td>' +
-      '<td class="col-auth"><div class="auth-summary">' + authPill('店铺', groupAuthStatus) + '</div></td>' +
-      '<td class="col-auth-time">' + buildTemuTimeStackHtml(stores, 'authTime') + '</td>' +
-      '<td class="col-expire">' + buildTemuTimeStackHtml(stores, 'authExpire') + '</td>' +
-      '<td class="col-sync">' + escapeHtml(primary.syncOrderTime || '—') + '</td>' +
-      '<td class="col-ops">' + escapeHtml((primary.operator || '—') + ' / ' + (primary.cs || '—')) + '</td>' +
-      '<td class="col-actions"><div class="cell-actions">' +
+      '<td class="col-alias temu-stack-cell">' + buildTemuAliasStackHtml(stores) + '</td>' +
+      '<td class="col-body temu-shared-cell" title="' + escapeHtml(body) + '">' + escapeHtml(body) + '</td>' +
+      '<td class="col-site col-site-field temu-shared-cell"></td>' +
+      '<td class="col-region platform-col platform-amazon temu-shared-cell">—</td>' +
+      '<td class="col-region platform-col platform-temu temu-stack-cell">' + buildTemuRegionPillsHtml(stores) + '</td>' +
+      '<td class="col-type col-type-field temu-shared-cell">' + storeType + '</td>' +
+      '<td class="col-platform-type temu-shared-cell">—</td>' +
+      '<td class="col-sub platform-col platform-shopee temu-shared-cell">—</td>' +
+      '<td class="col-shopee-ext platform-col platform-shopee temu-shared-cell">—</td>' +
+      '<td class="col-mall platform-col platform-mall temu-shared-cell">—</td>' +
+      '<td class="col-child-count platform-col platform-shopee temu-shared-cell">—</td>' +
+      '<td class="col-ad-account platform-col platform-tiktok temu-shared-cell">—</td>' +
+      '<td class="col-bc-id platform-col platform-tiktok temu-shared-cell">—</td>' +
+      '<td class="col-bu temu-shared-cell">' + escapeHtml(bu) + '</td>' +
+      '<td class="col-status temu-shared-cell">' + tagHtml(statusLabel, enabledCount ? 'tag-green' : 'tag-gray') + '</td>' +
+      '<td class="col-auth' + (stores.map(resolveStoreAuthStatus).every(function(st, _, arr){ return st === arr[0]; }) ? ' temu-shared-cell' : ' temu-stack-cell') + '">' + buildTemuAuthStatusHtml(stores) + '</td>' +
+      '<td class="col-auth-time' + (authTimeSame ? ' temu-shared-cell' : ' temu-stack-cell') + '">' + buildTemuMergedOrStackHtml(stores, 'authTime') + '</td>' +
+      '<td class="col-expire temu-shared-cell">' + buildTemuMergedOrStackHtml(stores, 'authExpire') + '</td>' +
+      '<td class="col-sync temu-shared-cell">' + escapeHtml(primary.syncOrderTime || '—') + '</td>' +
+      '<td class="col-ops temu-shared-cell">' + escapeHtml((primary.operator || '—') + ' / ' + (primary.cs || '—')) + '</td>' +
+      '<td class="col-actions temu-shared-cell"><div class="cell-actions">' +
         '<button class="table-action-link" data-op="详情" data-id="' + primary.id + '" type="button">详情</button>' +
         '<button class="table-action-link" data-op="编辑" data-id="' + primary.id + '" type="button">编辑</button>' +
         '<button class="table-action-link" data-op="立即授权" data-id="' + primary.id + '" type="button">立即授权 ▾</button>' +
