@@ -280,8 +280,37 @@
     store.region = def ? def.label : '';
     store.temuBaseAlias = stripTemuAliasSuffix(baseAlias);
     store.alias = buildTemuAlias(store.temuBaseAlias, regionKey);
-    store.name = store.alias;
+    // 主店铺名称用基础别名；区域店别名带后缀，列表按组展示为同一主店铺下的区域店
+    store.name = store.temuBaseAlias;
+    store.relationRole = 'temu-site';
+    if (!store.temuGroupId) {
+      store.temuGroupId = 'TG-' + store.temuBaseAlias;
+    }
     ensureTemuTokens(store);
+  }
+
+  function getTemuGroupKey(store) {
+    if (!store || !isTemuPlatform(store.platform)) return '';
+    return store.temuGroupId || store.temuBaseAlias || stripTemuAliasSuffix(store.alias || '') || String(store.id);
+  }
+
+  function getTemuMainName(store) {
+    return store.temuBaseAlias || stripTemuAliasSuffix(store.alias || '') || store.name || '—';
+  }
+
+  function getTemuSiblings(store) {
+    var key = getTemuGroupKey(store);
+    if (!key) return [];
+    return (window.STORE_DATA || []).filter(function(item) {
+      return isTemuPlatform(item.platform) && getTemuGroupKey(item) === key;
+    });
+  }
+
+  var temuGroupExpanded = {};
+
+  function isTemuGroupExpanded(groupKey) {
+    if (!groupKey) return true;
+    return temuGroupExpanded[groupKey] !== false;
   }
 
   function cloneStoreForTemuRegion(source, regionKey, baseAlias, explicitId) {
@@ -434,6 +463,11 @@
       if (!store.temuBaseAlias && store.alias) {
         store.temuBaseAlias = stripTemuAliasSuffix(store.alias);
       }
+      if (store.temuBaseAlias) {
+        store.name = store.temuBaseAlias;
+        store.relationRole = store.relationRole || 'temu-site';
+        if (!store.temuGroupId) store.temuGroupId = 'TG-' + store.temuBaseAlias;
+      }
     }
     if (isOzonPlatform(store.platform)) ensureOzonAuth(store);
     if (is1688Platform(store.platform)) ensureAlibabaAuth(store);
@@ -512,56 +546,172 @@
     }).join('、');
   }
 
+  function buildStoreRowHtml(s, options) {
+    options = options || {};
+    var statusTag = s.status === '启用' ? 'tag-green' : 'tag-gray';
+    var checked = selectedIds.has(s.id) ? 'checked' : '';
+    var childStores = s.platform === 'Shopee' ? getRelatedChildren(s) : [];
+    var childCountHtml = isShopeeMainStore(s)
+      ? '<button class="table-inline-link" data-op="子店铺" data-id="' + s.id + '" type="button">' + childStores.length + '</button>'
+      : '—';
+    var opsHtml =
+      '<button class="table-action-link" data-op="详情" data-id="' + s.id + '" type="button">详情</button>' +
+      '<button class="table-action-link" data-op="编辑" data-id="' + s.id + '" type="button">编辑</button>' +
+      (supportsQuickAuth(s.platform)
+        ? '<button class="table-action-link" data-op="立即授权" data-id="' + s.id + '" type="button">立即授权 ▾</button>'
+        : '') +
+      '<button class="table-action-more" data-op="更多" data-id="' + s.id + '" type="button">更多 ▾</button>';
+    var shopeeExt = '—';
+    if (s.platform === 'Shopee') {
+      if (s.relationRole === 'child') shopeeExt = '子店铺 / ' + (s.isSip ? '是' : '否');
+      else if (isShopeeMainStore(s)) shopeeExt = '主账号 / ' + (s.isSip ? '是' : '否');
+      else shopeeExt = (s.mainAccountId ? '主账号' : '否') + ' / ' + (s.isSip ? '是' : '否');
+    }
+
+    var nameHtml;
+    var rowClass = '';
+    if (options.temuChild) {
+      rowClass = ' class="temu-site-row temu-site-child"';
+      nameHtml =
+        '<div class="temu-tree-cell">' +
+          '<span class="temu-tree-branch" aria-hidden="true"></span>' +
+          '<div class="temu-tree-content">' +
+            '<a href="javascript:void(0)" class="store-name-link" data-op="详情" data-id="' + s.id + '">' + escapeHtml(s.alias || s.name || '—') + '</a>' +
+            '<span class="tag tag-gray temu-role-tag">区域店</span>' +
+          '</div>' +
+        '</div>';
+    } else if (options.temuSingle) {
+      rowClass = ' class="temu-site-row"';
+      nameHtml =
+        '<div class="temu-main-cell">' +
+          '<a href="javascript:void(0)" class="store-name-link" data-op="详情" data-id="' + s.id + '">' + escapeHtml(getTemuMainName(s)) + '</a>' +
+          '<span class="tag tag-blue temu-role-tag">主店铺</span>' +
+          '<div class="temu-main-sub">区域店 ' + escapeHtml(s.alias || '—') + '</div>' +
+        '</div>';
+    } else {
+      nameHtml = '<a href="javascript:void(0)" class="store-name-link" data-op="详情" data-id="' + s.id + '">' + escapeHtml(s.name || '—') + '</a>';
+    }
+
+    var rows = '';
+    rows += '<tr' + rowClass + ' data-store-id="' + s.id + '"' + (options.groupKey ? ' data-temu-group="' + escapeHtml(options.groupKey) + '"' : '') + '>';
+    rows += '<td class="col-check"><input type="checkbox" class="row-checkbox" data-id="' + s.id + '" ' + checked + ' /></td>';
+    rows += '<td class="col-name" title="' + escapeHtml(s.name || s.alias || '—') + '">' + nameHtml + '</td>';
+    rows += '<td class="col-alias">' + escapeHtml(s.alias || '—') + '</td>';
+    rows += '<td class="col-body" title="' + escapeHtml(s.body || '—') + '">' + escapeHtml(s.body || '—') + '</td>';
+    rows += '<td class="col-site col-site-field">' + (supportsSiteField(s.platform) ? tagHtml(s.site) : '') + '</td>';
+    rows += '<td class="col-region platform-col platform-amazon">' + (s.platform === 'Amazon' ? (s.region || '—') : '—') + '</td>';
+    rows += '<td class="col-region platform-col platform-temu">' + (isTemuPlatform(s.platform) ? (s.region || '—') : '—') + '</td>';
+    rows += '<td class="col-type col-type-field">' + (supportsStoreType(s.platform) ? displayStoreType(s.storeType) : '') + '</td>';
+    rows += '<td class="col-platform-type">' + (s.platformStoreType || '—') + '</td>';
+    rows += '<td class="col-sub platform-col platform-shopee">' + (s.platform === 'Shopee' ? (s.subName || '—') : '—') + '</td>';
+    rows += '<td class="col-shopee-ext platform-col platform-shopee">' + shopeeExt + '</td>';
+    rows += '<td class="col-mall platform-col platform-mall">' + (s.platform === 'Shopee' ? (s.isMall ? '是' : '否') : '—') + '</td>';
+    rows += '<td class="col-child-count platform-col platform-shopee">' + childCountHtml + '</td>';
+    rows += '<td class="col-ad-account platform-col platform-tiktok">' + (s.platform === 'TikTok Shop' ? (s.adAccountId || '—') : '—') + '</td>';
+    rows += '<td class="col-bc-id platform-col platform-tiktok">' + (s.platform === 'TikTok Shop' ? (s.bcId || '—') : '—') + '</td>';
+    rows += '<td class="col-bu">' + (s.bu || '—') + '</td>';
+    rows += '<td class="col-status">' + tagHtml(s.status, statusTag) + '</td>';
+    rows += '<td class="col-auth">' + authSummaryHtml(s) + '</td>';
+    rows += '<td class="col-auth-time">' + (s.authTime || '—') + '</td>';
+    rows += '<td class="col-expire">' + (s.authExpire || '—') + '</td>';
+    rows += '<td class="col-sync">' + (s.syncOrderTime || '—') + '</td>';
+    rows += '<td class="col-ops">' + (s.operator || '—') + ' / ' + (s.cs || '—') + '</td>';
+    rows += '<td class="col-actions"><div class="cell-actions">' + opsHtml + '</div></td>';
+    rows += '</tr>';
+    return rows;
+  }
+
+  function buildTemuGroupHeaderHtml(groupKey, stores) {
+    var mainName = getTemuMainName(stores[0]);
+    var regions = stores.map(function(s){ return s.region || '—'; }).join('、');
+    var body = stores[0].body || '—';
+    var storeType = supportsStoreType(stores[0].platform) ? displayStoreType(stores[0].storeType) : '';
+    var bu = stores[0].bu || '—';
+    var allChecked = stores.every(function(s){ return selectedIds.has(s.id); });
+    var expanded = isTemuGroupExpanded(groupKey);
+    var enabledCount = stores.filter(function(s){ return s.status === '启用'; }).length;
+    var authCount = stores.filter(function(s){ return s.authStatus === '已授权'; }).length;
+    return '<tr class="temu-group-row' + (expanded ? ' is-expanded' : '') + '" data-temu-group="' + escapeHtml(groupKey) + '">' +
+      '<td class="col-check"><input type="checkbox" class="temu-group-checkbox" data-temu-group="' + escapeHtml(groupKey) + '" ' + (allChecked ? 'checked' : '') + ' /></td>' +
+      '<td class="col-name" colspan="1">' +
+        '<div class="temu-main-cell">' +
+          '<button type="button" class="temu-group-toggle" data-temu-group="' + escapeHtml(groupKey) + '" aria-expanded="' + (expanded ? 'true' : 'false') + '">' + (expanded ? '▾' : '▸') + '</button>' +
+          '<div class="temu-tree-content">' +
+            '<span class="temu-main-name">' + escapeHtml(mainName) + '</span>' +
+            '<span class="tag tag-blue temu-role-tag">主店铺</span>' +
+            '<div class="temu-main-sub">含 ' + stores.length + ' 个区域店 · ' + escapeHtml(regions) + '</div>' +
+          '</div>' +
+        '</div>' +
+      '</td>' +
+      '<td class="col-alias"><span class="temu-muted">—</span></td>' +
+      '<td class="col-body" title="' + escapeHtml(body) + '">' + escapeHtml(body) + '</td>' +
+      '<td class="col-site col-site-field"></td>' +
+      '<td class="col-region platform-col platform-amazon">—</td>' +
+      '<td class="col-region platform-col platform-temu">' + escapeHtml(regions) + '</td>' +
+      '<td class="col-type col-type-field">' + storeType + '</td>' +
+      '<td class="col-platform-type">—</td>' +
+      '<td class="col-sub platform-col platform-shopee">—</td>' +
+      '<td class="col-shopee-ext platform-col platform-shopee">—</td>' +
+      '<td class="col-mall platform-col platform-mall">—</td>' +
+      '<td class="col-child-count platform-col platform-shopee">—</td>' +
+      '<td class="col-ad-account platform-col platform-tiktok">—</td>' +
+      '<td class="col-bc-id platform-col platform-tiktok">—</td>' +
+      '<td class="col-bu">' + escapeHtml(bu) + '</td>' +
+      '<td class="col-status">' + tagHtml(enabledCount === stores.length ? '启用' : '部分启用', enabledCount ? 'tag-green' : 'tag-gray') + '</td>' +
+      '<td class="col-auth">' + tagHtml('已授权 ' + authCount + '/' + stores.length, authCount ? 'tag-green' : 'tag-gray') + '</td>' +
+      '<td class="col-auth-time">—</td>' +
+      '<td class="col-expire">—</td>' +
+      '<td class="col-sync">—</td>' +
+      '<td class="col-ops">—</td>' +
+      '<td class="col-actions"><div class="cell-actions"><span class="temu-muted">展开查看区域店</span></div></td>' +
+    '</tr>';
+  }
+
+  function buildRenderEntries(stores) {
+    var entries = [];
+    var seenTemuGroups = {};
+    stores.forEach(function(s) {
+      if (!isTemuPlatform(s.platform)) {
+        entries.push({ type: 'store', store: s });
+        return;
+      }
+      var key = getTemuGroupKey(s);
+      if (seenTemuGroups[key]) return;
+      seenTemuGroups[key] = true;
+      var groupStores = stores.filter(function(item) {
+        return isTemuPlatform(item.platform) && getTemuGroupKey(item) === key;
+      });
+      // 保持区域内固定顺序：美区 → 欧区 → 全球
+      var order = { us: 1, eu: 2, global: 3 };
+      groupStores.sort(function(a, b) {
+        return (order[a.temuRegionKey] || 9) - (order[b.temuRegionKey] || 9);
+      });
+      if (groupStores.length > 1) {
+        entries.push({ type: 'temu-group', key: key, stores: groupStores });
+      } else {
+        entries.push({ type: 'temu-single', store: groupStores[0] });
+      }
+    });
+    return entries;
+  }
+
   function renderTable() {
     applyFilters();
     var tbody = $('storeTableBody');
     var rows = '';
-    filteredStores.forEach(function(s) {
-      var statusTag = s.status === '启用' ? 'tag-green' : 'tag-gray';
-      var checked = selectedIds.has(s.id) ? 'checked' : '';
-      var childStores = s.platform === 'Shopee' ? getRelatedChildren(s) : [];
-      var childCountHtml = isShopeeMainStore(s)
-        ? '<button class="table-inline-link" data-op="子店铺" data-id="' + s.id + '" type="button">' + childStores.length + '</button>'
-        : '—';
-      var opsHtml =
-        '<button class="table-action-link" data-op="详情" data-id="' + s.id + '" type="button">详情</button>' +
-        '<button class="table-action-link" data-op="编辑" data-id="' + s.id + '" type="button">编辑</button>' +
-        (supportsQuickAuth(s.platform)
-          ? '<button class="table-action-link" data-op="立即授权" data-id="' + s.id + '" type="button">立即授权 ▾</button>'
-          : '') +
-        '<button class="table-action-more" data-op="更多" data-id="' + s.id + '" type="button">更多 ▾</button>';
-      var shopeeExt = '—';
-      if (s.platform === 'Shopee') {
-        if (s.relationRole === 'child') shopeeExt = '子店铺 / ' + (s.isSip ? '是' : '否');
-        else if (isShopeeMainStore(s)) shopeeExt = '主账号 / ' + (s.isSip ? '是' : '否');
-        else shopeeExt = (s.mainAccountId ? '主账号' : '否') + ' / ' + (s.isSip ? '是' : '否');
+    buildRenderEntries(filteredStores).forEach(function(entry) {
+      if (entry.type === 'temu-group') {
+        rows += buildTemuGroupHeaderHtml(entry.key, entry.stores);
+        if (isTemuGroupExpanded(entry.key)) {
+          entry.stores.forEach(function(s) {
+            rows += buildStoreRowHtml(s, { temuChild: true, groupKey: entry.key });
+          });
+        }
+      } else if (entry.type === 'temu-single') {
+        rows += buildStoreRowHtml(entry.store, { temuSingle: true, groupKey: getTemuGroupKey(entry.store) });
+      } else {
+        rows += buildStoreRowHtml(entry.store);
       }
-
-      rows += '<tr>';
-      rows += '<td class="col-check"><input type="checkbox" class="row-checkbox" data-id="' + s.id + '" ' + checked + ' /></td>';
-      rows += '<td class="col-name" title="' + (s.name || '—') + '"><a href="javascript:void(0)" class="store-name-link" data-op="详情" data-id="' + s.id + '">' + (s.name || '—') + '</a></td>';
-      rows += '<td class="col-alias">' + (s.alias || '—') + '</td>';
-      rows += '<td class="col-body" title="' + (s.body || '—') + '">' + (s.body || '—') + '</td>';
-      rows += '<td class="col-site col-site-field">' + (supportsSiteField(s.platform) ? tagHtml(s.site) : '') + '</td>';
-      rows += '<td class="col-region platform-col platform-amazon">' + (s.platform === 'Amazon' ? (s.region || '—') : '—') + '</td>';
-      rows += '<td class="col-region platform-col platform-temu">' + (isTemuPlatform(s.platform) ? (s.region || '—') : '—') + '</td>';
-      rows += '<td class="col-type col-type-field">' + (supportsStoreType(s.platform) ? displayStoreType(s.storeType) : '') + '</td>';
-      rows += '<td class="col-platform-type">' + (s.platformStoreType || '—') + '</td>';
-      rows += '<td class="col-sub platform-col platform-shopee">' + (s.platform === 'Shopee' ? (s.subName || '—') : '—') + '</td>';
-      rows += '<td class="col-shopee-ext platform-col platform-shopee">' + shopeeExt + '</td>';
-      rows += '<td class="col-mall platform-col platform-mall">' + (s.platform === 'Shopee' ? (s.isMall ? '是' : '否') : '—') + '</td>';
-      rows += '<td class="col-child-count platform-col platform-shopee">' + childCountHtml + '</td>';
-      rows += '<td class="col-ad-account platform-col platform-tiktok">' + (s.platform === 'TikTok Shop' ? (s.adAccountId || '—') : '—') + '</td>';
-      rows += '<td class="col-bc-id platform-col platform-tiktok">' + (s.platform === 'TikTok Shop' ? (s.bcId || '—') : '—') + '</td>';
-      rows += '<td class="col-bu">' + (s.bu || '—') + '</td>';
-      rows += '<td class="col-status">' + tagHtml(s.status, statusTag) + '</td>';
-      rows += '<td class="col-auth">' + authSummaryHtml(s) + '</td>';
-      rows += '<td class="col-auth-time">' + (s.authTime || '—') + '</td>';
-      rows += '<td class="col-expire">' + (s.authExpire || '—') + '</td>';
-      rows += '<td class="col-sync">' + (s.syncOrderTime || '—') + '</td>';
-      rows += '<td class="col-ops">' + (s.operator || '—') + ' / ' + (s.cs || '—') + '</td>';
-      rows += '<td class="col-actions"><div class="cell-actions">' + opsHtml + '</div></td>';
-      rows += '</tr>';
     });
     tbody.innerHTML = rows || '<tr><td colspan="21" class="empty-cell">暂无符合条件的店铺</td></tr>';
     applyPlatformColumns();
@@ -1105,6 +1255,16 @@
     });
 
     $('storeTableBody').addEventListener('change', function(e) {
+      if (e.target.classList.contains('temu-group-checkbox')) {
+        var groupKey = e.target.dataset.temuGroup;
+        filteredStores.forEach(function(s) {
+          if (!isTemuPlatform(s.platform) || getTemuGroupKey(s) !== groupKey) return;
+          if (e.target.checked) selectedIds.add(s.id);
+          else selectedIds.delete(s.id);
+        });
+        renderTable();
+        return;
+      }
       if (!e.target.classList.contains('row-checkbox')) return;
       var id = parseInt(e.target.dataset.id, 10);
       if (e.target.checked) selectedIds.add(id);
@@ -1112,11 +1272,30 @@
       $('selectedCount').textContent = '已选 ' + selectedIds.size + ' 项';
       $('btnBatchDelete').disabled = selectedIds.size === 0;
       $('btnBatchDownloadPayment').disabled = selectedIds.size === 0;
+      var row = e.target.closest('tr');
+      var gKey = row && row.dataset.temuGroup;
+      if (gKey) {
+        var groupStores = filteredStores.filter(function(s) {
+          return isTemuPlatform(s.platform) && getTemuGroupKey(s) === gKey;
+        });
+        var groupCb = document.querySelector('.temu-group-checkbox[data-temu-group="' + gKey.replace(/"/g, '') + '"]');
+        if (groupCb) {
+          groupCb.checked = groupStores.length > 0 && groupStores.every(function(s){ return selectedIds.has(s.id); });
+        }
+      }
     });
   }
 
   function bindRowActions() {
     $('storeTableBody').addEventListener('click', function(e) {
+      var toggle = e.target.closest('.temu-group-toggle');
+      if (toggle) {
+        e.stopPropagation();
+        var groupKey = toggle.dataset.temuGroup;
+        temuGroupExpanded[groupKey] = !isTemuGroupExpanded(groupKey);
+        renderTable();
+        return;
+      }
       var btn = e.target.closest('[data-op]');
       if (!btn) return;
       e.stopPropagation();
@@ -2227,11 +2406,19 @@
             if (matched && temuRegionKeys.indexOf(matched.key) >= 0) primaryKey = matched.key;
           }
         }
+        if (!currentStore.temuGroupId) {
+          currentStore.temuGroupId = 'TG-' + baseAlias + '-' + Date.now().toString(36).slice(-4);
+        }
         applyTemuRegionToStore(currentStore, primaryKey, baseAlias);
+        // 改基础别名时保持组 ID，仅更新展示用主店铺名
+        currentStore.temuGroupId = currentStore.temuGroupId || ('TG-' + baseAlias);
         var siblingId = Math.max(nextStoreId(), (currentStore.id || 0) + 1);
         temuRegionKeys.filter(function(key){ return key !== primaryKey; }).forEach(function(key) {
-          temuSiblings.push(cloneStoreForTemuRegion(currentStore, key, baseAlias, siblingId++));
+          var sibling = cloneStoreForTemuRegion(currentStore, key, baseAlias, siblingId++);
+          sibling.temuGroupId = currentStore.temuGroupId;
+          temuSiblings.push(sibling);
         });
+        temuGroupExpanded[currentStore.temuGroupId] = true;
       } else {
         currentStore.alias = aliasInput;
         if (isNew) currentStore.name = currentStore.alias;
