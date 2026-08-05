@@ -398,7 +398,7 @@ th.col-alias{z-index:4;background:#fafafa!important}
 .temu-group-row td{vertical-align:top}
 .temu-main-cell{display:flex;align-items:center;gap:8px;min-width:0}
 .temu-tree-content{min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
-.temu-main-name{font-weight:600;color:var(--text)}
+.temu-main-name{font-weight:600}
 .temu-role-tag{margin:0}
 .temu-count-chip{display:inline-block;padding:0 6px;height:20px;line-height:20px;border-radius:4px;background:#f5f5f5;color:var(--subtle);font-size:12px}
 .temu-pair-stack{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
