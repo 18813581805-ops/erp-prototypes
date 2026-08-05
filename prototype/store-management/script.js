@@ -641,13 +641,16 @@
     var checked = opts.checked ? ' checked' : '';
     var attrs = '';
     if (opts.id != null) attrs += ' data-id="' + opts.id + '"';
-    if (opts.groupKey) attrs += ' data-temu-group="' + escapeHtml(opts.groupKey) + '"';
-    var label = opts.checked ? '启用' : '关闭';
     return '<label class="store-status-switch" title="打开启用，关闭停用">' +
       '<input type="checkbox" class="store-status-toggle"' + attrs + checked + ' />' +
       '<span class="store-status-track"></span>' +
-      '<span class="store-status-text">' + label + '</span>' +
     '</label>';
+  }
+
+  function buildTemuStatusStackHtml(stores) {
+    return '<div class="temu-pair-stack temu-status-stack">' + stores.map(function(s) {
+      return storeStatusSwitchHtml({ checked: isStoreEnabled(s), id: s.id });
+    }).join('') + '</div>';
   }
 
   function buildTemuGroupCompactHtml(groupKey, stores) {
@@ -657,7 +660,6 @@
     var storeType = supportsStoreType(stores[0].platform) ? displayStoreType(stores[0].storeType) : '';
     var bu = stores[0].bu || '—';
     var allChecked = stores.every(function(s){ return selectedIds.has(s.id); });
-    var allEnabled = stores.every(isStoreEnabled);
     var primary = stores[0];
     var authTimeSame = stores.every(function(s){ return (s.authTime || '—') === (stores[0].authTime || '—'); });
     // 授权到期时间业务上同一主店铺共用一条：取各区域中最早到期（有效日期）
@@ -695,7 +697,7 @@
       '<td class="col-ad-account platform-col platform-tiktok temu-shared-cell">—</td>' +
       '<td class="col-bc-id platform-col platform-tiktok temu-shared-cell">—</td>' +
       '<td class="col-bu temu-shared-cell">' + escapeHtml(bu) + '</td>' +
-      '<td class="col-status temu-shared-cell">' + storeStatusSwitchHtml({ checked: allEnabled, id: primary.id, groupKey: groupKey }) + '</td>' +
+      '<td class="col-status temu-stack-cell">' + buildTemuStatusStackHtml(stores) + '</td>' +
       '<td class="col-auth temu-shared-cell">' + buildTemuAuthStatusHtml(stores) + '</td>' +
       '<td class="col-auth-time' + (authTimeSame ? ' temu-shared-cell' : ' temu-stack-cell') + '">' + buildTemuMergedOrStackHtml(stores, 'authTime') + '</td>' +
       '<td class="col-expire temu-shared-cell"><span class="temu-shared-value">' + escapeHtml(sharedExpire) + '</span></td>' +
@@ -1359,17 +1361,9 @@
     $('storeTableBody').addEventListener('change', function(e) {
       if (e.target.classList.contains('store-status-toggle')) {
         var enabled = !!e.target.checked;
-        var statusGroupKey = e.target.dataset.temuGroup;
-        if (statusGroupKey) {
-          window.STORE_DATA.forEach(function(s) {
-            if (!isTemuPlatform(s.platform) || getTemuGroupKey(s) !== statusGroupKey) return;
-            applyStoreEnabled(s, enabled);
-          });
-        } else {
-          var storeId = parseInt(e.target.dataset.id, 10);
-          var targetStore = window.STORE_DATA.find(function(s){ return s.id === storeId; });
-          applyStoreEnabled(targetStore, enabled);
-        }
+        var storeId = parseInt(e.target.dataset.id, 10);
+        var targetStore = window.STORE_DATA.find(function(s){ return s.id === storeId; });
+        applyStoreEnabled(targetStore, enabled);
         renderTable();
         if (currentStore) {
           var refreshed = window.STORE_DATA.find(function(s){ return s.id === currentStore.id; });
