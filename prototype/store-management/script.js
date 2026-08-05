@@ -530,10 +530,6 @@
     return is1688Platform(platform);
   }
 
-  function isAmazonLikeAuthPlatform(platform) {
-    return platform === 'Amazon' || platform === '淘宝' || platform === '天猫';
-  }
-
   function hidesStoreType(platform) {
     return isOzonPlatform(platform) || is1688Platform(platform);
   }
@@ -567,7 +563,7 @@
   }
 
   function authOptionsForPlatform(platform) {
-    if (isAmazonLikeAuthPlatform(platform) || platform === 'TikTok Shop') {
+    if (platform === 'Amazon' || platform === 'TikTok Shop') {
       return ['store', 'ad'];
     }
     if (platform === 'Shopee') {
@@ -600,14 +596,8 @@
       Lazada: { store: 'https://auth.lazada.com/oauth/authorize' },
       AliExpress: { store: 'https://oauth.aliexpress.com/authorize' },
       '1688': { store: 'https://auth.1688.com/oauth/authorize' },
-      '淘宝': {
-        store: 'https://oauth.taobao.com/authorize',
-        ad: 'https://ad.alimama.com/authorize'
-      },
-      '天猫': {
-        store: 'https://oauth.taobao.com/authorize',
-        ad: 'https://ad.alimama.com/authorize'
-      }
+      '淘宝': { store: 'https://oauth.taobao.com/authorize' },
+      '天猫': { store: 'https://oauth.taobao.com/authorize' }
     };
     var platformMap = map[platform] || {};
     return platformMap[authType] || ('https://example.com/' + encodeURIComponent(platform) + '/' + authType + '-auth');
@@ -619,7 +609,7 @@
   }
 
   function supportsAdAuth(platform) {
-    return isAmazonLikeAuthPlatform(platform) || platform === 'Shopee' || platform === 'TikTok Shop';
+    return platform === 'Amazon' || platform === 'Shopee' || platform === 'TikTok Shop';
   }
 
   function fillRowAuthMenu(menu, platform) {
