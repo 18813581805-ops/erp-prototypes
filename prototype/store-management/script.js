@@ -306,6 +306,16 @@
     });
   }
 
+  function cloneStoreForTemuRegion(source, regionKey, baseAlias, explicitId) {
+    var clone = JSON.parse(JSON.stringify(source));
+    clone.id = explicitId != null ? explicitId : nextStoreId();
+    clone._draft = false;
+    clone._pendingTemuAuthHighlight = false;
+    applyTemuRegionToStore(clone, regionKey, baseAlias);
+    return clone;
+  }
+
+
   var temuGroupExpanded = {};
 
   function isTemuGroupExpanded(groupKey) {
@@ -319,6 +329,231 @@
       return (order[a.temuRegionKey] || 9) - (order[b.temuRegionKey] || 9);
     });
   }
+
+  function isOzonPlatform(platform) {
+    return platform === 'Ozon';
+  }
+
+  function ensureOzonAuth(store) {
+    if (!('clientId' in store) || store.clientId == null) store.clientId = '';
+    if (!('apiKey' in store) || store.apiKey == null) store.apiKey = '';
+  }
+
+  function storeHasOzonAuth(store) {
+    ensureOzonAuth(store);
+    return !!(store.clientId || store.apiKey);
+  }
+
+  function applyOzonAuthFromTokens(store) {
+    var mainAccountId = store.mainAccountId;
+    if (storeHasOzonAuth(store)) {
+      store.authStatus = '已授权';
+      store.authTime = formatNow();
+      store.authExpire = nextYear();
+      store.syncOrderTime = formatNow();
+    } else {
+      store.authStatus = '未授权';
+      store.authTime = '—';
+      store.authExpire = '—';
+    }
+    store.mainAccountId = mainAccountId;
+  }
+
+  function ensureOperationLogs(store) {
+    if (!store.operationLogs) {
+      store.operationLogs = [
+        { time: '2026-05-19 14:30', operator: 'Freddy', module: '授权', type: '验证', content: '完成店铺授权校验' },
+        { time: '2026-05-19 10:00', operator: 'Freddy', module: '基础资料', type: '新增', content: '创建店铺记录' }
+      ];
+    }
+  }
+
+  function pushOperationLog(store, module, type, content) {
+    ensureOperationLogs(store);
+    store.operationLogs.unshift({
+      time: formatNow(),
+      operator: 'Freddy',
+      module: module,
+      type: type,
+      content: content
+    });
+  }
+
+  function formatLogValue(value) {
+    return value ? String(value) : '（空）';
+  }
+
+  function syncStoreTypeOptions(platform, currentValue) {
+    var select = $('editStoreType');
+    var group = $('editStoreTypeGroup');
+    if (!select) return;
+    var hideType = hidesStoreType(platform);
+    if (group) group.hidden = hideType;
+    if (hideType) {
+      select.value = '';
+      syncSelect('editStoreType');
+      return;
+    }
+    var temuLike = isTemuPlatform(platform) || platform === 'AliExpress';
+    var lazada = platform === 'Lazada';
+    var options;
+    if (temuLike) {
+      options = [['', '请选择店铺类型'], ['全托管', '全托管'], ['半托管', '半托管']];
+    } else if (lazada) {
+      options = [['', '请选择店铺类型'], ['跨境', '跨境'], ['本土', '本土']];
+    } else {
+      options = [['', '请选择店铺类型'], ['本土', '本土'], ['全球', '全球']];
+    }
+    select.innerHTML = options.map(function(item) {
+      return '<option value="' + item[0] + '">' + item[1] + '</option>';
+    }).join('');
+    var val = currentValue || '';
+    if (temuLike) {
+      select.value = (val === '全托管' || val === '半托管') ? val : '';
+    } else if (lazada) {
+      if (val === '跨境' || val === '本土') select.value = val;
+      else if (isGlobalStoreType(val) || val === '全球') select.value = '跨境';
+      else if (val) select.value = '本土';
+      else select.value = '';
+    } else if (val === '全托管' || val === '半托管' || val === '跨境') {
+      select.value = '';
+    } else {
+      select.value = val ? (isGlobalStoreType(val) ? '全球' : '本土') : '';
+    }
+    syncSelect('editStoreType');
+  }
+
+  function syncIsMallField(platform, currentValue) {
+    var group = $('editIsMallGroup');
+    var select = $('editIsMall');
+    if (!group || !select) return;
+    var isShopee = platform === 'Shopee';
+    group.hidden = !isShopee;
+    if (!isShopee) {
+      select.value = '';
+      syncSelect('editIsMall');
+      return;
+    }
+    if (currentValue === true || currentValue === '是') select.value = '是';
+    else if (currentValue === false || currentValue === '否') select.value = '否';
+    else select.value = '';
+    syncSelect('editIsMall');
+  }
+
+  function normalizeStore(store) {
+    if (!store.storeEmail) store.storeEmail = store.platform === 'TikTok Shop' ? 'tiktok-store@yiyihe.com' : '';
+    if (!store.paymentAccounts) {
+      store.paymentAccounts = store.fundPlatform ? [{
+        platform: store.fundPlatform,
+        account: store.fundAccount || '—',
+        accountRaw: store.fundAccountRaw || store.fundAccount || '',
+        accountId: store.fundAccountId || '',
+        currency: store.platform === 'Amazon' ? 'USD' : 'USD'
+      }] : [];
+    }
+    if (!store.bodyChangeRecords) store.bodyChangeRecords = [];
+    if (!store.paymentChangeRecords) store.paymentChangeRecords = [];
+    if (!store.permissions) store.permissions = ['订单查看'];
+    if (!store.adAccountId) store.adAccountId = '';
+    if (!store.bcId) store.bcId = '';
+    if (!store.registrationCompany) store.registrationCompany = store.body || '';
+    if (!store.registrationCode) store.registrationCode = principalCode(store.registrationCompany);
+    if (!store.registrationDate) store.registrationDate = principalEnterpriseRegistrationTime(store.registrationCompany);
+    store.body = store.registrationCompany;
+    if (!('adSyncSetting' in store)) store.adSyncSetting = null;
+    if (!('isMall' in store)) store.isMall = false;
+    if (isTemuPlatform(store.platform)) {
+      ensureTemuTokens(store);
+      if (!store.temuRegionKey && store.region) {
+        var regionDef = temuRegionByLabel(store.region);
+        if (regionDef) store.temuRegionKey = regionDef.key;
+      }
+      if (!store.temuBaseAlias && store.alias) {
+        store.temuBaseAlias = stripTemuAliasSuffix(store.alias);
+      }
+      if (store.temuBaseAlias) {
+        store.name = store.temuBaseAlias;
+        store.relationRole = store.relationRole || 'temu-site';
+        if (!store.temuGroupId) store.temuGroupId = 'TG-' + store.temuBaseAlias;
+      }
+    }
+    if (isOzonPlatform(store.platform)) ensureOzonAuth(store);
+    if (is1688Platform(store.platform)) ensureAlibabaAuth(store);
+    ensureOperationLogs(store);
+    (store.paymentAccounts || []).forEach(function(account) {
+      if (account.platform && paymentPlatformOptions.indexOf(account.platform) === -1) paymentPlatformOptions.push(account.platform);
+    });
+    if (!store.childStores && store.relatedStores && store.relatedStores.length) {
+      store.childStores = store.relatedStores.map(function(name, index) {
+        return { alias: name, site: index === 0 ? '马来西亚' : '泰国', authStatus: '成功' };
+      });
+    }
+  }
+
+  function getRelatedChildren(store) {
+    normalizeStore(store);
+    if (store.childStores && store.childStores.length) return store.childStores;
+    if (!store.mainAccountId) return [];
+    return window.STORE_DATA.filter(function(item) {
+      return item.parentMainAccountId && item.parentMainAccountId === store.mainAccountId;
+    }).map(function(item) {
+      return { alias: item.alias, site: item.site, authStatus: item.authStatus === '已授权' ? '成功' : item.authStatus, storeId: item.id };
+    });
+  }
+
+  function isShopeeMainStore(store) {
+    return store.platform === 'Shopee' && (store.relationRole === 'main' || getRelatedChildren(store).length > 0);
+  }
+
+  function shouldUseMainAccountAuth(store) {
+    if (!store || store.platform !== 'Shopee') return false;
+    return store.authType === 'main_account' || isGlobalStoreType(store.storeType) || isShopeeMainStore(store);
+  }
+
+  function applyFilters() {
+    var keyword = value('filterKeyword').toLowerCase();
+    var body = $('filterBody').value;
+    var site = $('filterSite').value;
+    var status = $('filterStatus').value;
+    var auth = $('filterAuth').value;
+    var operator = value('filterOperator');
+    var isMain = $('filterMainAccount').value;
+    var isSip = $('filterSip').value;
+    var platformType = $('filterPlatformType').value;
+    var bu = $('filterBU').value;
+
+    filteredStores = window.STORE_DATA.filter(function(s) {
+      var text = [s.name, s.alias, s.subName, s.platformShopName].join(' ').toLowerCase();
+      if (activePlatform === '其他平台') {
+        if (isNamedPlatformTab(s.platform)) return false;
+      } else if (activePlatform !== '全部平台' && s.platform !== activePlatform) {
+        return false;
+      }
+      if (keyword && text.indexOf(keyword) === -1) return false;
+      if (body !== '全部' && s.body !== body) return false;
+      if (site !== '全部' && s.site !== site) return false;
+      if (status !== '全部' && s.status !== status) return false;
+      if (auth !== '全部' && s.authStatus !== auth) return false;
+      if (operator && s.operator.indexOf(operator) === -1) return false;
+      if (isMain !== '全部' && (s.mainAccountId ? '是' : '否') !== isMain) return false;
+      if (isSip !== '全部' && (s.isSip ? '是' : '否') !== isSip) return false;
+      if (platformType !== '全部' && s.platformStoreType !== platformType) return false;
+      if (bu !== '全部' && s.bu !== bu) return false;
+      return true;
+    });
+  }
+
+  function temuOrderRegionsText(store) {
+    if (!store || !isTemuPlatform(store.platform)) return '';
+    ensureTemuTokens(store);
+    var labels = { us: '美区', eu: '欧区', global: '全球' };
+    return ['us', 'eu', 'global'].filter(function(region) {
+      return tokenTripletHasValue(store.orderPullTokens[region]);
+    }).map(function(region) {
+      return labels[region];
+    }).join('、');
+  }
+
 
   function buildTemuAliasStackHtml(stores) {
     return '<div class="temu-alias-stack">' + stores.map(function(s) {
