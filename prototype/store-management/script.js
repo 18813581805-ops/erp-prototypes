@@ -550,7 +550,13 @@
       if (keyword && text.indexOf(keyword) === -1) return false;
       if (body !== '全部' && s.body !== body) return false;
       if (site !== '全部' && s.site !== site) return false;
-      if (status !== '全部' && s.status !== status) return false;
+      if (status !== '全部') {
+        if (status === '停用') {
+          if (s.status !== '停用' && s.status !== '关闭' && s.status !== '未启用') return false;
+        } else if (s.status !== status) {
+          return false;
+        }
+      }
       if (auth !== '全部' && resolveStoreAuthStatus(s) !== auth) return false;
       if (operator && s.operator.indexOf(operator) === -1) return false;
       if (isMain !== '全部' && (s.mainAccountId ? '是' : '否') !== isMain) return false;
@@ -613,6 +619,37 @@
     return '<div class="auth-summary temu-shared-value">' + authPill('店铺', groupStatus) + '</div>';
   }
 
+  function isStoreEnabled(store) {
+    if (!store) return false;
+    if (store.status === '启用') return true;
+    if (store.status === '停用' || store.status === '关闭' || store.status === '未启用' || store.status === '注销') return false;
+    return !!store.enabled;
+  }
+
+  function applyStoreEnabled(store, enabled) {
+    if (!store) return;
+    store.enabled = !!enabled;
+    if (store.status === '注销') return;
+    store.status = enabled ? '启用' : '停用';
+    if (enabled && (store.useStatus === '待启用' || !store.useStatus)) {
+      store.useStatus = '正常使用';
+    }
+  }
+
+  function storeStatusSwitchHtml(opts) {
+    opts = opts || {};
+    var checked = opts.checked ? ' checked' : '';
+    var attrs = '';
+    if (opts.id != null) attrs += ' data-id="' + opts.id + '"';
+    if (opts.groupKey) attrs += ' data-temu-group="' + escapeHtml(opts.groupKey) + '"';
+    var label = opts.checked ? '启用' : '关闭';
+    return '<label class="store-status-switch" title="打开启用，关闭停用">' +
+      '<input type="checkbox" class="store-status-toggle"' + attrs + checked + ' />' +
+      '<span class="store-status-track"></span>' +
+      '<span class="store-status-text">' + label + '</span>' +
+    '</label>';
+  }
+
   function buildTemuGroupCompactHtml(groupKey, stores) {
     stores = temuRegionOrder(stores);
     var mainName = getTemuMainName(stores[0]);
@@ -620,8 +657,7 @@
     var storeType = supportsStoreType(stores[0].platform) ? displayStoreType(stores[0].storeType) : '';
     var bu = stores[0].bu || '—';
     var allChecked = stores.every(function(s){ return selectedIds.has(s.id); });
-    var enabledCount = stores.filter(function(s){ return s.status === '启用'; }).length;
-    var statusLabel = enabledCount === stores.length ? '启用' : (enabledCount ? '部分启用' : '停用');
+    var allEnabled = stores.every(isStoreEnabled);
     var primary = stores[0];
     var authTimeSame = stores.every(function(s){ return (s.authTime || '—') === (stores[0].authTime || '—'); });
     // 授权到期时间业务上同一主店铺共用一条：取各区域中最早到期（有效日期）
@@ -659,7 +695,7 @@
       '<td class="col-ad-account platform-col platform-tiktok temu-shared-cell">—</td>' +
       '<td class="col-bc-id platform-col platform-tiktok temu-shared-cell">—</td>' +
       '<td class="col-bu temu-shared-cell">' + escapeHtml(bu) + '</td>' +
-      '<td class="col-status temu-shared-cell">' + tagHtml(statusLabel, enabledCount ? 'tag-green' : 'tag-gray') + '</td>' +
+      '<td class="col-status temu-shared-cell">' + storeStatusSwitchHtml({ checked: allEnabled, id: primary.id, groupKey: groupKey }) + '</td>' +
       '<td class="col-auth temu-shared-cell">' + buildTemuAuthStatusHtml(stores) + '</td>' +
       '<td class="col-auth-time' + (authTimeSame ? ' temu-shared-cell' : ' temu-stack-cell') + '">' + buildTemuMergedOrStackHtml(stores, 'authTime') + '</td>' +
       '<td class="col-expire temu-shared-cell"><span class="temu-shared-value">' + escapeHtml(sharedExpire) + '</span></td>' +
@@ -676,7 +712,6 @@
 
   function buildStoreRowHtml(s, options) {
     options = options || {};
-    var statusTag = s.status === '启用' ? 'tag-green' : 'tag-gray';
     var checked = selectedIds.has(s.id) ? 'checked' : '';
     var childStores = s.platform === 'Shopee' ? getRelatedChildren(s) : [];
     var childCountHtml = isShopeeMainStore(s)
@@ -729,7 +764,7 @@
     rows += '<td class="col-ad-account platform-col platform-tiktok">' + (s.platform === 'TikTok Shop' ? (s.adAccountId || '—') : '—') + '</td>';
     rows += '<td class="col-bc-id platform-col platform-tiktok">' + (s.platform === 'TikTok Shop' ? (s.bcId || '—') : '—') + '</td>';
     rows += '<td class="col-bu">' + (s.bu || '—') + '</td>';
-    rows += '<td class="col-status">' + tagHtml(s.status, statusTag) + '</td>';
+    rows += '<td class="col-status">' + storeStatusSwitchHtml({ checked: isStoreEnabled(s), id: s.id }) + '</td>';
     rows += '<td class="col-auth">' + authSummaryHtml(s) + '</td>';
     rows += '<td class="col-auth-time">' + (s.authTime || '—') + '</td>';
     rows += '<td class="col-expire">' + (s.authExpire || '—') + '</td>';
@@ -1322,6 +1357,31 @@
     });
 
     $('storeTableBody').addEventListener('change', function(e) {
+      if (e.target.classList.contains('store-status-toggle')) {
+        var enabled = !!e.target.checked;
+        var statusGroupKey = e.target.dataset.temuGroup;
+        if (statusGroupKey) {
+          window.STORE_DATA.forEach(function(s) {
+            if (!isTemuPlatform(s.platform) || getTemuGroupKey(s) !== statusGroupKey) return;
+            applyStoreEnabled(s, enabled);
+          });
+        } else {
+          var storeId = parseInt(e.target.dataset.id, 10);
+          var targetStore = window.STORE_DATA.find(function(s){ return s.id === storeId; });
+          applyStoreEnabled(targetStore, enabled);
+        }
+        renderTable();
+        if (currentStore) {
+          var refreshed = window.STORE_DATA.find(function(s){ return s.id === currentStore.id; });
+          if (refreshed) {
+            currentStore = refreshed;
+            var detailDrawer = $('drawerDetail');
+            if (detailDrawer && !detailDrawer.hidden) openDetail(currentStore);
+          }
+        }
+        toast(enabled ? '店铺已启用' : '店铺已关闭');
+        return;
+      }
       if (e.target.classList.contains('temu-group-checkbox')) {
         var groupKey = e.target.dataset.temuGroup;
         filteredStores.forEach(function(s) {
@@ -1839,7 +1899,6 @@
     $('bizDept').textContent = store.dept || '—';
     $('bizOwner').textContent = store.owner || '—';
     $('bizUseStatus').textContent = store.useStatus || '—';
-    $('bizEnabled').textContent = store.enabled ? '是' : '否';
     $('bizCancelDate').textContent = store.cancelDate || '—';
     $('bizOperator').textContent = store.operator || '—';
     $('bizCs').textContent = store.cs || '—';
@@ -2483,6 +2542,7 @@
       }
       if (isNew) {
         currentStore.status = '启用';
+        currentStore.enabled = true;
         currentStore.authStatus = '未授权';
         currentStore.authTime = '—';
         currentStore.authExpire = '—';
@@ -2490,6 +2550,7 @@
         currentStore._draft = false;
         temuSiblings.forEach(function(sibling) {
           sibling.status = '启用';
+          sibling.enabled = true;
           sibling.authStatus = '未授权';
           sibling.authTime = '—';
           sibling.authExpire = '—';
@@ -2546,8 +2607,6 @@
     syncSelect('editDept');
     $('editOwner').value = store.owner || '';
     $('editUseStatus').value = store.useStatus || (isNew ? '启用' : '');
-    $('editEnabled').value = isNew ? '是' : (store.enabled ? '是' : '否');
-    syncSelect('editEnabled');
     renderPaymentEditList(store.paymentAccounts || []);
     $('editHasDeposit').value = store.hasDeposit ? '是' : '否';
     $('editDepositRefundStatus').value = store.depositRefundStatus || '无需退回';
@@ -2601,7 +2660,6 @@
       currentStore.dept = value('editDept');
       currentStore.owner = value('editOwner');
       currentStore.useStatus = value('editUseStatus');
-      currentStore.enabled = $('editEnabled').value === '是';
       var oldPayment = JSON.stringify(currentStore.paymentAccounts || []);
       currentStore.paymentAccounts = accounts.map(function(account) {
         return {
