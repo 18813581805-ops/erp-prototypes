@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="build-time" content="2026-08-05T12:10:00+08:00" />
+  <title>Temu 店铺授权 · 云易盒 ERP</title>
+  <link rel="stylesheet" href="../../ui-library/tokens.css" />
+  <link rel="stylesheet" href="styles.css?v=202608051210" />
+</head>
+<body>
+<div class="erp-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">云</div>
+      <div>
+        <div class="brand-title">云易盒 ERP</div>
+        <div class="brand-subtitle">Cross-Border Manager</div>
+      </div>
+    </div>
+    <nav class="side-menu">
+      <div class="menu-group">基础数据</div>
+      <button class="side-item active"><span class="side-icon">店</span><span>Temu 店铺授权</span></button>
+      <button class="side-item"><span class="side-icon">商</span><span>商品管理</span></button>
+      <button class="side-item"><span class="side-icon">仓</span><span>仓库管理</span></button>
+      <div class="menu-group">订单管理</div>
+      <button class="side-item"><span class="side-icon">订</span><span>订单列表</span></button>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <header class="page-header">
+      <div class="header-left"><button class="header-icon-btn" type="button">☰</button></div>
+      <div class="header-meta">
+        <button class="header-icon-btn" type="button">通知</button>
+        <span class="avatar">管</span><span>管理员</span>
+      </div>
+    </header>
+
+    <section class="page-title-panel">
+      <div>
+        <h1>Temu 店铺授权</h1>
+        <p>单物理实体 + 分层 Token：1 个商品 Token + N 个区域订单 Token，在同一店铺下完成配置</p>
+      </div>
+    </section>
+
+    <section class="content-panel query-panel">
+      <div class="query-grid">
+        <div class="field">
+          <label>店铺名称</label>
+          <input id="filterKeyword" placeholder="自定义店铺名 / 官方店铺名 / 店铺ID" />
+        </div>
+        <div class="field">
+          <label>托管模式</label>
+          <select id="filterMode">
+            <option value="">全部</option>
+            <option>半托管</option>
+            <option>全托管</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>商品 Token</label>
+          <select id="filterProductToken">
+            <option value="">全部</option>
+            <option>校验通过</option>
+            <option>未校验</option>
+            <option>校验失败</option>
+          </select>
+        </div>
+        <div class="query-actions">
+          <button class="btn primary" id="btnSearch" type="button">搜索</button>
+          <button class="btn" id="btnReset" type="button">重置</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="action-bar">
+      <button class="btn primary" id="btnAddStore" type="button">+ 新增 / 授权店铺</button>
+      <span class="action-hint">同一窗口分层配置：全局商品 Token → 区域订单 Token</span>
+    </section>
+
+    <section class="content-panel list-panel">
+      <div id="storeList" class="store-list"></div>
+      <div class="table-footer">
+        <span>共 <strong id="totalCount">0</strong> 个物理店铺</span>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- 两步式授权 Modal -->
+<div class="modal-overlay" id="authModal" hidden>
+  <div class="modal auth-modal">
+    <div class="modal-header">
+      <div>
+        <h3 id="modalTitle">新增 Temu 店铺授权</h3>
+        <p class="modal-subtitle">单物理实体：一个店铺下配置 1 个商品 Token + 多个区域订单 Token</p>
+      </div>
+      <button class="modal-close" id="btnCloseModal" type="button">✕</button>
+    </div>
+
+    <div class="step-bar">
+      <div class="step-item active" data-step="1"><span class="step-num">1</span><span>店铺基础与商品 Token</span></div>
+      <div class="step-line"></div>
+      <div class="step-item" data-step="2"><span class="step-num">2</span><span>区域订单 Token 绑定</span></div>
+    </div>
+
+    <div class="modal-body">
+      <!-- Step 1 -->
+      <div id="step1" class="step-pane">
+        <div class="form-section-title">店铺基础信息</div>
+        <div class="form-grid">
+          <div class="form-group form-wide">
+            <label class="form-label required">自定义店铺名称</label>
+            <input class="form-input" id="inputAlias" placeholder="例如：创美家居旗舰店-01" maxlength="50" />
+            <p class="form-help">作为 ERP 内部识别的唯一物理店铺名称</p>
+          </div>
+          <div class="form-group">
+            <label class="form-label required">托管业务类型</label>
+            <select class="form-input" id="inputMode">
+              <option value="">请选择</option>
+              <option value="半托管">Temu 半托管</option>
+              <option value="全托管">Temu 全托管</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">关联公司</label>
+            <select class="form-input" id="inputCompany">
+              <option>云易盒科技有限公司</option>
+              <option>云易盒科技美国</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-section-title">商品 / 库存 Token（Global Application Token）</div>
+        <div class="token-verify-row">
+          <div class="form-group form-wide" style="margin:0;flex:1;">
+            <label class="form-label required">商品 Token</label>
+            <div class="inline-input-row">
+              <input class="form-input" id="inputProductToken" placeholder="粘贴 Global Application Token" maxlength="128" />
+              <button class="btn" id="btnVerifyProduct" type="button">校验 Token</button>
+            </div>
+            <p class="form-help">校验通过后将自动回填 Temu 后台店铺 ID 与官方店铺名称</p>
+          </div>
+        </div>
+        <div class="fetch-meta" id="productFetchMeta" hidden>
+          <div class="meta-item"><span class="meta-label">店铺 ID</span><strong id="fetchedShopId">—</strong></div>
+          <div class="meta-item"><span class="meta-label">官方店铺名称</span><strong id="fetchedShopName">—</strong></div>
+          <div class="meta-item"><span class="meta-label">校验状态</span><span class="status-tag ok" id="productVerifyStatus">✓ 校验通过</span></div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div id="step2" class="step-pane" hidden>
+        <div class="form-section-title">已开通站点 / 区域订单 Token 绑定</div>
+        <p class="form-help" style="margin-bottom:12px;">勾选该店铺实际开通的区域；未勾选区域不校验、不触发定时拉单</p>
+        <div class="region-cards" id="regionCards"></div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn" id="btnCancelModal" type="button">取消</button>
+      <button class="btn" id="btnPrevStep" type="button" hidden>上一步</button>
+      <button class="btn primary" id="btnNextStep" type="button">下一步：配置区域 Token</button>
+      <button class="btn primary" id="btnSaveAuth" type="button" hidden>保存授权配置</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="data.js?v=202608051210"></script>
+<script src="script.js?v=202608051210"></script>
+</body>
+</html>
