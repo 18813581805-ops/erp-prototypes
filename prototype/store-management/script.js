@@ -143,7 +143,7 @@
 
   function resolveStoreAuthStatus(store) {
     var status = (store && store.authStatus) || '未授权';
-    if (status === '未授权') return '未授权';
+    if (!status || status === '—' || status === '未授权') return '未授权';
     var expireMs = parseAuthExpireTime(store && store.authExpire);
     if (!isNaN(expireMs)) {
       if (expireMs < Date.now()) return '已过期';
@@ -652,7 +652,7 @@
       '<td class="col-status temu-shared-cell">' + tagHtml(statusLabel, enabledCount ? 'tag-green' : 'tag-gray') + '</td>' +
       '<td class="col-auth' + (stores.map(resolveStoreAuthStatus).every(function(st, _, arr){ return st === arr[0]; }) ? ' temu-shared-cell' : ' temu-stack-cell') + '">' + buildTemuAuthStatusHtml(stores) + '</td>' +
       '<td class="col-auth-time' + (authTimeSame ? ' temu-shared-cell' : ' temu-stack-cell') + '">' + buildTemuMergedOrStackHtml(stores, 'authTime') + '</td>' +
-      '<td class="col-expire temu-shared-cell">' + buildTemuMergedOrStackHtml(stores, 'authExpire') + '</td>' +
+      '<td class="col-expire' + (stores.every(function(s){ return (s.authExpire || '—') === (stores[0].authExpire || '—'); }) ? ' temu-shared-cell' : ' temu-stack-cell') + '">' + buildTemuMergedOrStackHtml(stores, 'authExpire') + '</td>' +
       '<td class="col-sync temu-shared-cell">' + escapeHtml(primary.syncOrderTime || '—') + '</td>' +
       '<td class="col-ops temu-shared-cell">' + escapeHtml((primary.operator || '—') + ' / ' + (primary.cs || '—')) + '</td>' +
       '<td class="col-actions temu-shared-cell"><div class="cell-actions">' +
