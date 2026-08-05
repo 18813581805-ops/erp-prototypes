@@ -530,13 +530,13 @@ window.STORE_DATA = [
     platformStoreType: '—',
     bu: '北美事业部',
     status: '启用',
-    authStatus: '未授权',
-    authTime: '—',
-    authExpire: '—',
+    authStatus: '已授权',
+    authTime: '2026-05-20 10:00',
+    authExpire: '2027-08-05 07:39',
     authType: 'token',
     mainAccountId: null,
     isSip: false,
-    syncOrderTime: '—',
+    syncOrderTime: '2026-05-20 10:05',
     operator: '张三',
     cs: '王五',
     platformShopId: 'TEMU-US-10086',
@@ -572,15 +572,15 @@ window.STORE_DATA = [
     unrecordedStores: 0,
     orderPullTokens: {
       us: { accessToken: '', appKey: '', appSecret: '' },
-      eu: { accessToken: '', appKey: '', appSecret: '' },
+      eu: { accessToken: 'eu_order_access_token_demo', appKey: 'eu_app_key_demo', appSecret: 'eu_app_secret_demo' },
       global: { accessToken: '', appKey: '', appSecret: '' }
     },
     productPullToken: {
-      accessToken: '',
-      appKey: '',
-      appSecret: ''
+      accessToken: 'product_access_token_demo',
+      appKey: 'product_app_key_demo',
+      appSecret: 'product_app_secret_demo'
     },
-    temuAuthEdited: false,
+    temuAuthEdited: true,
     paymentAccounts: [
       { platform: 'PingPong', account: '**** **** 5566', accountRaw: 'pingpong-temu-5566@yiyihe.com', accountId: 'PP-TEMU-5566', currency: 'USD' }
     ],
