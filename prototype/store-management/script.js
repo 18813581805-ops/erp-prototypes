@@ -603,14 +603,14 @@
   }
 
   function buildTemuAuthStatusHtml(stores) {
+    // 列表中的区域店均为已创建实体；未开通区域不会生成子店，故授权状态按主店铺汇总展示一条
     var statuses = stores.map(resolveStoreAuthStatus);
-    var allSame = statuses.length > 0 && statuses.every(function(st){ return st === statuses[0]; });
-    if (allSame) {
-      return '<div class="auth-summary temu-shared-value">' + authPill('店铺', statuses[0]) + '</div>';
-    }
-    return '<div class="temu-pair-stack">' + statuses.map(function(st) {
-      return '<div class="auth-summary">' + authPill('店铺', st) + '</div>';
-    }).join('') + '</div>';
+    var groupStatus = '未授权';
+    if (statuses.some(function(st){ return st === '已过期'; })) groupStatus = '已过期';
+    else if (statuses.some(function(st){ return st === '即将过期'; })) groupStatus = '即将过期';
+    else if (statuses.every(function(st){ return st === '已授权'; })) groupStatus = '已授权';
+    else if (statuses.some(function(st){ return st === '已授权' || st === '即将过期'; })) groupStatus = '已授权';
+    return '<div class="auth-summary temu-shared-value">' + authPill('店铺', groupStatus) + '</div>';
   }
 
   function buildTemuGroupCompactHtml(groupKey, stores) {
@@ -624,6 +624,17 @@
     var statusLabel = enabledCount === stores.length ? '启用' : (enabledCount ? '部分启用' : '停用');
     var primary = stores[0];
     var authTimeSame = stores.every(function(s){ return (s.authTime || '—') === (stores[0].authTime || '—'); });
+    // 授权到期时间业务上同一主店铺共用一条：取各区域中最早到期（有效日期）
+    var sharedExpire = stores.reduce(function(best, s) {
+      var v = s.authExpire || '—';
+      if (v === '—') return best;
+      if (best === '—' || best === '') return v;
+      var a = parseAuthExpireTime(best);
+      var b = parseAuthExpireTime(v);
+      if (isNaN(a)) return v;
+      if (isNaN(b)) return best;
+      return b < a ? v : best;
+    }, stores[0].authExpire || '—');
     return '<tr class="temu-group-row" data-temu-group="' + escapeHtml(groupKey) + '">' +
       '<td class="col-check temu-shared-cell"><input type="checkbox" class="temu-group-checkbox" data-temu-group="' + escapeHtml(groupKey) + '" ' + (allChecked ? 'checked' : '') + ' /></td>' +
       '<td class="col-name temu-shared-cell">' +
@@ -649,9 +660,9 @@
       '<td class="col-bc-id platform-col platform-tiktok temu-shared-cell">—</td>' +
       '<td class="col-bu temu-shared-cell">' + escapeHtml(bu) + '</td>' +
       '<td class="col-status temu-shared-cell">' + tagHtml(statusLabel, enabledCount ? 'tag-green' : 'tag-gray') + '</td>' +
-      '<td class="col-auth' + (stores.map(resolveStoreAuthStatus).every(function(st, _, arr){ return st === arr[0]; }) ? ' temu-shared-cell' : ' temu-stack-cell') + '">' + buildTemuAuthStatusHtml(stores) + '</td>' +
+      '<td class="col-auth temu-shared-cell">' + buildTemuAuthStatusHtml(stores) + '</td>' +
       '<td class="col-auth-time' + (authTimeSame ? ' temu-shared-cell' : ' temu-stack-cell') + '">' + buildTemuMergedOrStackHtml(stores, 'authTime') + '</td>' +
-      '<td class="col-expire' + (stores.every(function(s){ return (s.authExpire || '—') === (stores[0].authExpire || '—'); }) ? ' temu-shared-cell' : ' temu-stack-cell') + '">' + buildTemuMergedOrStackHtml(stores, 'authExpire') + '</td>' +
+      '<td class="col-expire temu-shared-cell"><span class="temu-shared-value">' + escapeHtml(sharedExpire) + '</span></td>' +
       '<td class="col-sync temu-shared-cell">' + escapeHtml(primary.syncOrderTime || '—') + '</td>' +
       '<td class="col-ops temu-shared-cell">' + escapeHtml((primary.operator || '—') + ' / ' + (primary.cs || '—')) + '</td>' +
       '<td class="col-actions temu-shared-cell"><div class="cell-actions">' +
