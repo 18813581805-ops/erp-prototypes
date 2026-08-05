@@ -394,17 +394,19 @@ th.col-alias{z-index:4;background:#fafafa!important}
 .form-wide{grid-column:1/-1}
 .textarea{height:76px;padding-top:8px;resize:vertical}
 
-/* Temu 主店铺列表：一行展示，别名/区域/授权时间/到期时间按区域对齐 */
-.temu-group-row td{vertical-align:top}
+/* Temu 主店铺列表：共有字段垂直居中，差异字段按区域对齐 */
+.temu-group-row td.temu-shared-cell{vertical-align:middle}
+.temu-group-row td.temu-stack-cell{vertical-align:middle}
 .temu-main-cell{display:flex;align-items:center;gap:8px;min-width:0}
 .temu-tree-content{min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .temu-main-name{font-weight:600}
 .temu-role-tag{margin:0}
 .temu-count-chip{display:inline-block;padding:0 6px;height:20px;line-height:20px;border-radius:4px;background:#f5f5f5;color:var(--subtle);font-size:12px}
-.temu-pair-stack{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.temu-pair-stack{display:flex;flex-direction:column;gap:6px;align-items:flex-start;justify-content:center}
 .temu-alias-text{font-size:13px;line-height:22px;height:22px;color:var(--text)}
 .temu-region-pill{display:inline-block;padding:0 8px;height:22px;line-height:22px;border-radius:4px;background:#e6f4ff;color:#1677ff;font-size:12px;border:1px solid #91caff}
 .temu-time-line{display:block;font-size:13px;line-height:22px;height:22px;color:var(--text);white-space:nowrap}
+.temu-shared-value{display:inline-flex;align-items:center;min-height:22px;font-size:13px;color:var(--text);white-space:nowrap}
 .temu-muted{color:var(--subtle);font-size:13px}
 
 /* ===== Toast ===== */
