@@ -243,48 +243,17 @@
     return stripTemuAliasSuffix(baseAlias) + (def ? def.suffix : '');
   }
 
-  function getSelectedTemuRegionKeys() {
-    return Array.prototype.slice.call(document.querySelectorAll('.temu-region-check:checked')).map(function(input) {
-      return input.value;
-    });
-  }
-
-  function syncTemuRegionField(platform, store) {
-    var group = $('editTemuRegionGroup');
-    if (!group) return;
-    var isTemu = isTemuPlatform(platform);
-    group.hidden = !isTemu;
-    document.querySelectorAll('.platform-edit-temu').forEach(function(el){ el.hidden = !isTemu; });
-    if (!isTemu) {
-      document.querySelectorAll('.temu-region-check').forEach(function(input){ input.checked = false; });
-      return;
-    }
-    var selected = {};
+  function resolveTemuRegionKey(store, aliasInput) {
+    if (store && store.temuRegionKey && temuRegionByKey(store.temuRegionKey)) return store.temuRegionKey;
     if (store && store.region) {
       var byLabel = temuRegionByLabel(store.region);
-      if (byLabel) selected[byLabel.key] = true;
+      if (byLabel) return byLabel.key;
     }
-    if (store && store.temuRegionKey) selected[store.temuRegionKey] = true;
-    document.querySelectorAll('.temu-region-check').forEach(function(input) {
-      input.checked = !!selected[input.value];
-      // 编辑已有单店时仍允许多选：多选后会拆出兄弟店铺
-      input.disabled = false;
-    });
-    updateTemuRegionHint();
-  }
-
-  function updateTemuRegionHint() {
-    var hint = $('editTemuRegionHint');
-    if (!hint) return;
-    var base = stripTemuAliasSuffix(value('editAlias') || '店铺别名');
-    var keys = getSelectedTemuRegionKeys();
-    if (!keys.length) {
-      hint.textContent = '勾选多个区域将拆分为多条独立店铺；别名自动追加区域缩写，其余字段相同';
-      return;
-    }
-    hint.textContent = '将生成：' + keys.map(function(key) {
-      return buildTemuAlias(base, key) + '（' + (temuRegionByKey(key) || {}).label + '）';
-    }).join('、');
+    var alias = String(aliasInput || (store && store.alias) || '');
+    if (/_US$/i.test(alias)) return 'us';
+    if (/_EU$/i.test(alias)) return 'eu';
+    if (/_BT_GLOBAL$/i.test(alias)) return 'global';
+    return 'us';
   }
 
   function nextStoreId() {
@@ -1558,7 +1527,6 @@
     syncStoreTypeOptions(platform, creatingBasicStore ? value('editStoreType') : (currentStore ? currentStore.storeType : ''));
     syncIsMallField(platform, creatingBasicStore ? (value('editIsMall') || '') : (currentStore ? currentStore.isMall : ''));
     syncSiteFieldVisibility(platform);
-    syncTemuRegionField(platform, creatingBasicStore ? null : currentStore);
   }
 
   function bindCreateStore() {
@@ -2408,7 +2376,6 @@
     syncStoreTypeOptions(creatingBasicStore ? value('editPlatformSelect') : store.platform, store.storeType);
     syncIsMallField(creatingBasicStore ? value('editPlatformSelect') : store.platform, creatingBasicStore ? '' : store.isMall);
     syncSiteFieldVisibility(creatingBasicStore ? value('editPlatformSelect') : store.platform);
-    syncTemuRegionField(creatingBasicStore ? value('editPlatformSelect') : store.platform, creatingBasicStore ? null : store);
   }
 
   function bindEditBasic() {
@@ -2416,12 +2383,6 @@
       $(id).addEventListener('click', function(){ $('drawerEditBasic').hidden = true; });
     });
     $('editPlatformSelect').addEventListener('change', updateEditCreatePlatformFields);
-    if ($('editAlias')) {
-      $('editAlias').addEventListener('input', updateTemuRegionHint);
-    }
-    document.querySelectorAll('.temu-region-check').forEach(function(input) {
-      input.addEventListener('change', updateTemuRegionHint);
-    });
     $('btnSaveEditBasic').addEventListener('click', function() {
       if (!currentStore) return;
       var platform = creatingBasicStore ? value('editPlatformSelect') : currentStore.platform;
@@ -2475,14 +2436,6 @@
         toast('请补充该平台后台店铺ID与后台店铺名称', 'error');
         return;
       }
-      var temuRegionKeys = [];
-      if (isTemuPlatform(platform)) {
-        temuRegionKeys = getSelectedTemuRegionKeys();
-        if (!temuRegionKeys.length) {
-          toast('请至少选择一个区域', 'error');
-          return;
-        }
-      }
       currentStore.platform = platform;
       currentStore.site = site;
       var oldBody = currentStore.registrationCompany || currentStore.body || '';
@@ -2508,30 +2461,14 @@
       currentStore.registrationCode = principalCode(newBody);
       currentStore.registrationDate = principalEnterpriseRegistrationTime(newBody);
       var isNew = creatingBasicStore;
-      var temuSiblings = [];
       if (isTemuPlatform(platform)) {
         var baseAlias = stripTemuAliasSuffix(aliasInput);
-        var primaryKey = temuRegionKeys[0];
-        if (!isNew) {
-          if (currentStore.temuRegionKey && temuRegionKeys.indexOf(currentStore.temuRegionKey) >= 0) {
-            primaryKey = currentStore.temuRegionKey;
-          } else {
-            var matched = temuRegionByLabel(currentStore.region);
-            if (matched && temuRegionKeys.indexOf(matched.key) >= 0) primaryKey = matched.key;
-          }
-        }
+        var regionKey = resolveTemuRegionKey(isNew ? null : currentStore, aliasInput);
         if (!currentStore.temuGroupId) {
           currentStore.temuGroupId = 'TG-' + baseAlias + '-' + Date.now().toString(36).slice(-4);
         }
-        applyTemuRegionToStore(currentStore, primaryKey, baseAlias);
-        // 改基础别名时保持组 ID，仅更新展示用主店铺名
+        applyTemuRegionToStore(currentStore, regionKey, baseAlias);
         currentStore.temuGroupId = currentStore.temuGroupId || ('TG-' + baseAlias);
-        var siblingId = Math.max(nextStoreId(), (currentStore.id || 0) + 1);
-        temuRegionKeys.filter(function(key){ return key !== primaryKey; }).forEach(function(key) {
-          var sibling = cloneStoreForTemuRegion(currentStore, key, baseAlias, siblingId++);
-          sibling.temuGroupId = currentStore.temuGroupId;
-          temuSiblings.push(sibling);
-        });
       } else {
         currentStore.alias = aliasInput;
         if (isNew) currentStore.name = currentStore.alias;
@@ -2544,34 +2481,16 @@
         currentStore.authExpire = '—';
         currentStore.syncOrderTime = '—';
         currentStore._draft = false;
-        temuSiblings.forEach(function(sibling) {
-          sibling.status = '启用';
-          sibling.enabled = true;
-          sibling.authStatus = '未授权';
-          sibling.authTime = '—';
-          sibling.authExpire = '—';
-          sibling.syncOrderTime = '—';
-        });
-        window.STORE_DATA = [currentStore].concat(temuSiblings).concat(window.STORE_DATA);
-      } else if (temuSiblings.length) {
-        window.STORE_DATA = temuSiblings.concat(window.STORE_DATA);
+        window.STORE_DATA = [currentStore].concat(window.STORE_DATA);
       }
       $('drawerEditBasic').hidden = true;
       renderTable();
       if (isNew) {
         openEditBiz(currentStore, 'create');
-        if (temuSiblings.length) {
-          toast('已按区域拆分为 ' + (1 + temuSiblings.length) + ' 个店铺，请继续完善业务信息');
-        } else {
-          toast('基础资料保存成功，请继续完善业务信息');
-        }
+        toast('基础资料保存成功，请继续完善业务信息');
       } else {
         if (editOrigin === 'detail' || editOrigin === 'create') openDetail(currentStore);
-        if (temuSiblings.length) {
-          toast('已按区域拆分为 ' + (1 + temuSiblings.length) + ' 个店铺（仅别名与区域不同）');
-        } else {
-          toast('基础资料保存成功');
-        }
+        toast('基础资料保存成功');
       }
       creatingBasicStore = false;
     });
