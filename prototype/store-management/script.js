@@ -631,7 +631,6 @@
           '<div class="temu-tree-content">' +
             '<a href="javascript:void(0)" class="store-name-link temu-main-name" data-op="详情" data-id="' + primary.id + '">' + escapeHtml(mainName) + '</a>' +
             '<span class="tag tag-blue temu-role-tag">主店铺</span>' +
-            '<span class="temu-count-chip">' + stores.length + ' 区</span>' +
           '</div>' +
         '</div>' +
       '</td>' +
