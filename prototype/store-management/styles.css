@@ -204,7 +204,7 @@ th.col-alias{z-index:4;background:#fafafa!important}
 /* ===== Form ===== */
 .form-group{margin-bottom:14px}
 .form-label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
-.form-label.required::after,.ozon-field-label.required::after{content:' *';color:var(--danger)}
+.form-label.required::before,.ozon-field-label.required::before{content:'* ';color:var(--danger)}
 .form-input{width:100%;height:34px;padding:0 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;outline:none;background:#fff}
 .form-input:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(22,119,255,.1)}
 .form-input:disabled{color:var(--subtle);background:#fafafa;cursor:not-allowed}
