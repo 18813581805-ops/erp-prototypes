@@ -557,9 +557,9 @@
 
   function buildTemuAliasStackHtml(stores) {
     return '<div class="temu-pair-stack">' + stores.map(function(s) {
-      return '<a href="javascript:void(0)" class="temu-alias-link" data-op="详情" data-id="' + s.id + '" title="' + escapeHtml(s.region || '') + '">' +
+      return '<span class="temu-alias-text" title="' + escapeHtml(s.region || '') + '">' +
         escapeHtml(s.alias || '—') +
-      '</a>';
+      '</span>';
     }).join('') + '</div>';
   }
 
