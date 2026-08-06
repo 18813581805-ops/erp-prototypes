@@ -2323,8 +2323,23 @@
       kindTabs.addEventListener('click', function(e) {
         var tab = e.target.closest('.token-kind-tab');
         if (!tab) return;
-        setTemuTokenKindTabs(tab.dataset.tokenKind);
+        var nextKind = tab.dataset.tokenKind === 'order' ? 'order' : 'product';
+        if (nextKind === temuTokenKind) return;
+        // 切换页签时保留原有 Token 编辑草稿（商品 / 各区域订单）
+        if (temuAuthEditing && editOrderTokenDraft && temuTokenKind === 'order') {
+          editOrderTokenDraft[authOrderTokenRegion] = readOrderTokenInputs();
+        }
+        setTemuTokenKindTabs(nextKind);
         syncTemuAuthChrome();
+        if (temuAuthEditing && nextKind === 'order' && editOrderTokenDraft) {
+          fillOrderTokenInputs(editOrderTokenDraft[authOrderTokenRegion] || emptyTokenTriplet());
+          setTokenRegionTabs('authOrderTokenTabs', authOrderTokenRegion);
+          var orderInput = $('editOrderAccessToken');
+          if (orderInput) orderInput.focus();
+        } else if (temuAuthEditing && nextKind === 'product') {
+          var productInput = $('editProductAccessToken');
+          if (productInput) productInput.focus();
+        }
       });
     }
   }
