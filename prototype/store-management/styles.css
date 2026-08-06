@@ -124,7 +124,7 @@ ul{margin:0;padding:0;list-style:none}
 .row-auth-menu .action-menu-item:disabled{color:rgba(0,0,0,.25);cursor:not-allowed}
 .row-auth-menu .action-menu-item.is-disabled:hover,
 .row-auth-menu .action-menu-item:disabled:hover{background:transparent;color:rgba(0,0,0,.25)}
-.auth-type-option-list{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px}
+.auth-type-option-list{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px}
 .modal-overlay#modalAuthType .auth-type-option.btn{
   display:inline-flex;
   justify-content:center;
