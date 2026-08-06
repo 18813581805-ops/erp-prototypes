@@ -2004,12 +2004,13 @@
   function setOzonAuthViewMode() {
     ozonAuthEditing = false;
     ozonAuthHighlight = false;
-    $('inlineOzonClientId').hidden = true;
-    $('inlineOzonApiKey').hidden = true;
+    // 与授权跳转编辑页一致：始终保留输入框，非编辑态只读
+    $('inlineOzonClientId').hidden = false;
+    $('inlineOzonApiKey').hidden = false;
     $('inlineOzonClientId').disabled = true;
     $('inlineOzonApiKey').disabled = true;
-    $('viewOzonClientId').hidden = false;
-    $('viewOzonApiKey').hidden = false;
+    $('viewOzonClientId').hidden = true;
+    $('viewOzonApiKey').hidden = true;
     if (currentStore) renderOzonAuthSummary(currentStore);
     else syncOzonAuthChrome();
   }
@@ -2116,9 +2117,9 @@
   function setAlibabaAuthViewMode() {
     alibabaAuthEditing = false;
     alibabaAuthHighlight = false;
-    $('inlineAlibabaAccessToken').hidden = true;
+    $('inlineAlibabaAccessToken').hidden = false;
     $('inlineAlibabaAccessToken').disabled = true;
-    $('viewAlibabaAccessToken').hidden = false;
+    $('viewAlibabaAccessToken').hidden = true;
     if (currentStore) renderAlibabaAuthSummary(currentStore);
     else syncAlibabaAuthChrome();
   }
@@ -2271,6 +2272,16 @@
     document.querySelector('.detail-tab[data-tab="' + tabName + '"]').classList.add('active');
     document.querySelectorAll('.tab-content').forEach(function(t){ t.hidden = true; });
     $('tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).hidden = false;
+    // 授权信息页与「授权」按钮跳转一致：进入即可编辑 Token / 凭证
+    if (tabName === 'auth' && currentStore) {
+      if (isTemuPlatform(currentStore.platform)) {
+        enterTemuAuthEdit(shouldShowTemuAuthTip(currentStore));
+      } else if (isOzonPlatform(currentStore.platform)) {
+        enterOzonAuthEdit(shouldShowOzonAuthTip(currentStore));
+      } else if (is1688Platform(currentStore.platform)) {
+        enterAlibabaAuthEdit(shouldShowAlibabaAuthTip(currentStore));
+      }
+    }
   }
 
   function bindDetail() {
@@ -2708,18 +2719,32 @@
       card.classList.toggle('is-highlight', showTip);
       card.classList.toggle('is-editing', temuAuthEditing);
     }
-    document.querySelectorAll('.temu-auth-input').forEach(function(input) {
-      input.classList.toggle('is-highlight', temuAuthEditing);
-    });
+    // 始终展示 Token 输入框（与授权按钮跳转的编辑页一致），非编辑态只读
     var orderView = $('authOrderTokenPanelView');
     var orderEdit = $('authOrderTokenPanelEdit');
     var productView = $('authProductTokenPanelView');
     var productEdit = $('authProductTokenPanelEdit');
-    if (orderView) orderView.hidden = temuAuthEditing;
-    if (orderEdit) orderEdit.hidden = !temuAuthEditing;
-    if (productView) productView.hidden = temuAuthEditing;
-    if (productEdit) productEdit.hidden = !temuAuthEditing;
+    if (orderView) orderView.hidden = true;
+    if (orderEdit) orderEdit.hidden = false;
+    if (productView) productView.hidden = true;
+    if (productEdit) productEdit.hidden = false;
+    document.querySelectorAll('.temu-auth-input').forEach(function(input) {
+      input.disabled = !temuAuthEditing;
+      input.classList.toggle('is-highlight', temuAuthEditing);
+    });
     setTemuTokenKindTabs(temuTokenKind);
+  }
+
+  function fillTemuTokenEditors(store) {
+    if (!store) return;
+    ensureTemuTokens(store);
+    var product = clampTemuTokenTriplet(store.productPullToken);
+    applyTemuInputMaxAttributes();
+    if ($('editProductAccessToken')) $('editProductAccessToken').value = product.accessToken || '';
+    if ($('editProductAppKey')) $('editProductAppKey').value = product.appKey || '';
+    if ($('editProductAppSecret')) $('editProductAppSecret').value = product.appSecret || '';
+    var order = clampTemuTokenTriplet((store.orderPullTokens && store.orderPullTokens[authOrderTokenRegion]) || emptyTokenTriplet());
+    fillOrderTokenInputs(order);
   }
 
   function renderTemuAuthSummary(store) {
@@ -2734,6 +2759,7 @@
     $('temuAuthMainAccount').textContent = store.mainAccountId || '—';
     renderAuthOrderTokenRegion(store, authOrderTokenRegion);
     renderAuthProductToken(store);
+    fillTemuTokenEditors(store);
     setTokenRegionTabs('authOrderTokenTabs', authOrderTokenRegion);
     setTemuTokenKindTabs(temuTokenKind);
     syncTemuAuthChrome();
@@ -2752,23 +2778,25 @@
     ensureTemuTokens(currentStore);
     temuAuthEditing = true;
     temuAuthHighlight = !!withHighlight && shouldShowTemuAuthTip(currentStore);
-    authOrderTokenRegion = 'us';
+    authOrderTokenRegion = authOrderTokenRegion || 'us';
     editOrderTokenDraft = {
       us: clampTemuTokenTriplet(currentStore.orderPullTokens.us),
       eu: clampTemuTokenTriplet(currentStore.orderPullTokens.eu),
       global: clampTemuTokenTriplet(currentStore.orderPullTokens.global)
     };
-    fillOrderTokenInputs(editOrderTokenDraft.us);
-    var product = clampTemuTokenTriplet(currentStore.productPullToken);
     applyTemuInputMaxAttributes();
-    $('editProductAccessToken').value = product.accessToken || '';
-    $('editProductAppKey').value = product.appKey || '';
-    $('editProductAppSecret').value = product.appSecret || '';
+    fillTemuTokenEditors(currentStore);
+    fillOrderTokenInputs(editOrderTokenDraft[authOrderTokenRegion] || emptyTokenTriplet());
     setTokenRegionTabs('authOrderTokenTabs', authOrderTokenRegion);
-    setTemuTokenKindTabs(temuTokenKind);
+    setTemuTokenKindTabs(temuTokenKind || 'product');
     syncTemuAuthChrome();
-    if (temuTokenKind === 'product') $('editProductAccessToken').focus();
-    else $('editOrderAccessToken').focus();
+    if (temuTokenKind === 'order') {
+      var orderFocus = $('editOrderAccessToken');
+      if (orderFocus) orderFocus.focus();
+    } else {
+      var productFocus = $('editProductAccessToken');
+      if (productFocus) productFocus.focus();
+    }
   }
 
   function tokenTripletLog(label, oldToken, newToken) {
