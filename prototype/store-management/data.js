@@ -532,7 +532,7 @@ window.STORE_DATA = [
     status: '启用',
     authStatus: '已授权',
     authTime: '2026-05-20 10:00',
-    authExpire: '2027-08-05 07:39',
+    authExpire: '2027-05-20 10:00',
     authType: 'token',
     mainAccountId: null,
     isSip: false,
