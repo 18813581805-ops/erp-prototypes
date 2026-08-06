@@ -2528,7 +2528,7 @@
       renderTable();
       if (isNew) {
         openEditBiz(currentStore, 'create');
-        toast('基础资料已暂存。请继续编辑业务信息，保存后店铺才会新增成功', 'success', 4500);
+        toast('基础资料已暂存。请继续编辑业务信息，保存后店铺即可新增成功', 'success', 4500);
       } else {
         if (editOrigin === 'detail' || editOrigin === 'create') openDetail(currentStore);
         toast('基础资料保存成功');
