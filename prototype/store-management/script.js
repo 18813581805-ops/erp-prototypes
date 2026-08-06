@@ -72,10 +72,33 @@
     return new Date().toISOString().slice(0,16).replace('T',' ');
   }
 
+  function formatDateTime(date) {
+    return date.toISOString().slice(0,16).replace('T',' ');
+  }
+
   function nextYear() {
     var d = new Date();
     d.setFullYear(d.getFullYear() + 1);
-    return d.toISOString().slice(0,16).replace('T',' ');
+    return formatDateTime(d);
+  }
+
+  /** 在指定授权时间基础上加一年，得到过期时间 */
+  function addOneYearFrom(timeText) {
+    var ms = parseAuthExpireTime(timeText);
+    var d = isNaN(ms) ? new Date() : new Date(ms);
+    d.setFullYear(d.getFullYear() + 1);
+    return formatDateTime(d);
+  }
+
+  /** 剩余天数 = 过期时间 − 授权时间（授权有效期长度，非距今天倒计时） */
+  function remainDaysFromAuthPeriod(authTime, expireTime) {
+    if (!authTime || authTime === '—' || authTime === '-') return '—';
+    if (!expireTime || expireTime === '—' || expireTime === '-' || expireTime === '无限期') return '—';
+    var start = parseAuthExpireTime(authTime);
+    var end = parseAuthExpireTime(expireTime);
+    if (isNaN(start) || isNaN(end)) return '—';
+    var days = Math.round((end - start) / (1000 * 60 * 60 * 24));
+    return days + ' 天';
   }
 
   function tagForAuth(status) {
@@ -208,7 +231,7 @@
     if (storeHasTemuTokens(store)) {
       store.authStatus = '已授权';
       store.authTime = formatNow();
-      store.authExpire = nextYear();
+      store.authExpire = addOneYearFrom(store.authTime);
       store.syncOrderTime = formatNow();
     } else {
       store.authStatus = '未授权';
@@ -345,7 +368,7 @@
     if (storeHasJdAuth(store)) {
       store.authStatus = '已授权';
       store.authTime = formatNow();
-      store.authExpire = nextYear();
+      store.authExpire = addOneYearFrom(store.authTime);
       store.syncOrderTime = formatNow();
     } else {
       store.authStatus = '未授权';
@@ -1066,6 +1089,10 @@
       openDetail(store);
       activateDetailTab('auth');
       enterJdAuthEdit(true);
+      return;
+    }
+    if (is1688Platform(platform)) {
+      toast('授权建设中');
       return;
     }
 
@@ -2147,7 +2174,7 @@
     statusEl.className = 'tag ' + authInfo.tag;
     $('jdAuthTime').textContent = store.authTime || '—';
     $('jdAuthExpire').textContent = store.authExpire || '—';
-    $('jdAuthRemain').textContent = remainDays(store.authExpire);
+    $('jdAuthRemain').textContent = remainDaysFromAuthPeriod(store.authTime, store.authExpire);
     $('jdAuthMainAccount').textContent = store.mainAccountId || '—';
     $('inlineJdAppKey').value = store.appKey || '';
     $('inlineJdToken').value = store.token || '';
@@ -2927,7 +2954,7 @@
     statusEl.className = 'tag ' + authInfo.tag;
     $('temuAuthTime').textContent = store.authTime || '—';
     $('temuAuthExpire').textContent = store.authExpire || '—';
-    $('temuAuthRemain').textContent = remainDays(store.authExpire);
+    $('temuAuthRemain').textContent = remainDaysFromAuthPeriod(store.authTime, store.authExpire);
     $('temuAuthMainAccount').textContent = store.mainAccountId || '—';
     renderAuthOrderTokenRegion(store, authOrderTokenRegion);
     renderAuthProductToken(store);
