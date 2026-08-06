@@ -24,8 +24,13 @@
   var ozonAuthHighlight = false;
   var alibabaAuthEditing = false;
   var alibabaAuthHighlight = false;
+  var jdAuthEditing = false;
+  var jdAuthHighlight = false;
   var OZON_CLIENT_ID_MAX = 20;
   var OZON_API_KEY_MAX = 36;
+  var JD_APP_KEY_MAX = 64;
+  var JD_TOKEN_MAX = 128;
+  var JD_REFRESH_TOKEN_MAX = 128;
   // Temu 常见凭证长度：App Key≈32、App Secret≈40、access_token≈56~64；输入上限略留余量
   var TEMU_ACCESS_TOKEN_MAX = 128;
   var TEMU_APP_KEY_MAX = 64;
@@ -320,6 +325,36 @@
     return platform === 'Ozon';
   }
 
+  function isJdPlatform(platform) {
+    return platform === '京东';
+  }
+
+  function ensureJdAuth(store) {
+    if (!('appKey' in store) || store.appKey == null) store.appKey = '';
+    if (!('token' in store) || store.token == null) store.token = '';
+    if (!('refreshToken' in store) || store.refreshToken == null) store.refreshToken = '';
+  }
+
+  function storeHasJdAuth(store) {
+    ensureJdAuth(store);
+    return !!(String(store.appKey || '').trim() || String(store.token || '').trim() || String(store.refreshToken || '').trim());
+  }
+
+  function applyJdAuthFromTokens(store) {
+    var mainAccountId = store.mainAccountId;
+    if (storeHasJdAuth(store)) {
+      store.authStatus = '已授权';
+      store.authTime = formatNow();
+      store.authExpire = nextYear();
+      store.syncOrderTime = formatNow();
+    } else {
+      store.authStatus = '未授权';
+      store.authTime = '—';
+      store.authExpire = '—';
+    }
+    store.mainAccountId = mainAccountId;
+  }
+
   function ensureOzonAuth(store) {
     if (!('clientId' in store) || store.clientId == null) store.clientId = '';
     if (!('apiKey' in store) || store.apiKey == null) store.apiKey = '';
@@ -465,6 +500,7 @@
     }
     if (isOzonPlatform(store.platform)) ensureOzonAuth(store);
     if (is1688Platform(store.platform)) ensureAlibabaAuth(store);
+    if (isJdPlatform(store.platform)) ensureJdAuth(store);
     ensureOperationLogs(store);
     (store.paymentAccounts || []).forEach(function(account) {
       if (account.platform && paymentPlatformOptions.indexOf(account.platform) === -1) paymentPlatformOptions.push(account.platform);
@@ -898,6 +934,7 @@
   }
 
   function supportsQuickAuth(platform) {
+    if (isJdPlatform(platform)) return true;
     return !isMiscOtherPlatform(platform);
   }
 
@@ -1029,6 +1066,12 @@
       openDetail(store);
       activateDetailTab('auth');
       enterAlibabaAuthEdit(true);
+      return;
+    }
+    if (authType === 'store' && isJdPlatform(platform)) {
+      openDetail(store);
+      activateDetailTab('auth');
+      enterJdAuthEdit(true);
       return;
     }
 
@@ -1905,9 +1948,11 @@
     var isTemu = isTemuPlatform(store.platform);
     var isOzon = isOzonPlatform(store.platform);
     var is1688 = is1688Platform(store.platform);
+    var isJd = isJdPlatform(store.platform);
     $('temuAuthCard').hidden = !isTemu;
     $('alibabaAuthCard').hidden = !is1688;
-    $('genericAuthCard').hidden = isOzon || isTemu || is1688;
+    $('jdAuthCard').hidden = !isJd;
+    $('genericAuthCard').hidden = isOzon || isTemu || is1688 || isJd;
     $('ozonAuthCard').hidden = !isOzon;
     if (isTemu) {
       authOrderTokenRegion = 'us';
@@ -1947,6 +1992,18 @@
     } else {
       alibabaAuthEditing = false;
       alibabaAuthHighlight = false;
+    }
+    if (isJd) {
+      renderJdAuthSummary(store);
+      if (store._pendingJdAuthHighlight) {
+        enterJdAuthEdit(true);
+        store._pendingJdAuthHighlight = false;
+      } else {
+        setJdAuthViewMode();
+      }
+    } else {
+      jdAuthEditing = false;
+      jdAuthHighlight = false;
     }
 
     renderRelatedStores(store);
@@ -2072,6 +2129,135 @@
     setOzonAuthViewMode();
     renderOperationLogs(currentStore);
     toast(storeHasOzonAuth(currentStore) ? '授权信息保存成功，已更新授权状态' : '授权信息已保存（未填写凭证，保持未授权）');
+  }
+
+  function shouldShowJdAuthTip(store) {
+    if (!store || !isJdPlatform(store.platform)) return false;
+    ensureJdAuth(store);
+    if (store.jdAuthEdited) return false;
+    return !storeHasJdAuth(store);
+  }
+
+  function syncJdAuthChrome() {
+    var saveBtn = $('btnJdAuthSave');
+    var editBtn = $('btnJdAuthEdit');
+    if (saveBtn) saveBtn.hidden = !jdAuthEditing;
+    if (editBtn) editBtn.hidden = jdAuthEditing;
+    var showTip = currentStore ? shouldShowJdAuthTip(currentStore) : false;
+    var tip = $('jdAuthTip');
+    if (tip) tip.hidden = !showTip;
+    var card = $('jdAuthCard');
+    if (card) {
+      card.classList.toggle('is-highlight', showTip);
+      card.classList.toggle('is-editing', jdAuthEditing);
+    }
+    document.querySelectorAll('.jd-auth-input').forEach(function(input) {
+      input.classList.toggle('is-highlight', jdAuthEditing);
+    });
+  }
+
+  function renderJdAuthSummary(store) {
+    ensureJdAuth(store);
+    var authInfo = tagForAuth(store.authStatus);
+    var statusEl = $('jdAuthStatus');
+    statusEl.textContent = authInfo.text;
+    statusEl.className = 'tag ' + authInfo.tag;
+    $('jdAuthTime').textContent = store.authTime || '—';
+    $('jdAuthExpire').textContent = store.authExpire || '—';
+    $('jdAuthRemain').textContent = remainDays(store.authExpire);
+    $('jdAuthMainAccount').textContent = store.mainAccountId || '—';
+    $('inlineJdAppKey').value = store.appKey || '';
+    $('inlineJdToken').value = store.token || '';
+    $('inlineJdRefreshToken').value = store.refreshToken || '';
+    syncJdAuthChrome();
+  }
+
+  function setJdAuthViewMode() {
+    jdAuthEditing = false;
+    jdAuthHighlight = false;
+    $('inlineJdAppKey').disabled = true;
+    $('inlineJdToken').disabled = true;
+    $('inlineJdRefreshToken').disabled = true;
+    if (currentStore) renderJdAuthSummary(currentStore);
+    else syncJdAuthChrome();
+  }
+
+  function enterJdAuthEdit(withHighlight) {
+    if (!currentStore || !isJdPlatform(currentStore.platform)) return;
+    ensureJdAuth(currentStore);
+    jdAuthEditing = true;
+    jdAuthHighlight = !!withHighlight && shouldShowJdAuthTip(currentStore);
+    $('inlineJdAppKey').disabled = false;
+    $('inlineJdToken').disabled = false;
+    $('inlineJdRefreshToken').disabled = false;
+    $('inlineJdAppKey').value = currentStore.appKey || '';
+    $('inlineJdToken').value = currentStore.token || '';
+    $('inlineJdRefreshToken').value = currentStore.refreshToken || '';
+    syncJdAuthChrome();
+    $('inlineJdAppKey').focus();
+  }
+
+  function bindJdAuthInputLimits() {
+    var limits = {
+      inlineJdAppKey: JD_APP_KEY_MAX,
+      inlineJdToken: JD_TOKEN_MAX,
+      inlineJdRefreshToken: JD_REFRESH_TOKEN_MAX
+    };
+    Object.keys(limits).forEach(function(id) {
+      var el = $(id);
+      if (!el || el.dataset.lengthBound === '1') return;
+      el.dataset.lengthBound = '1';
+      var max = limits[id];
+      el.setAttribute('maxlength', String(max));
+      function enforce() {
+        var raw = el.value || '';
+        if (raw.length <= max) return;
+        el.value = raw.slice(0, max);
+        toast('最长 ' + max + ' 位', 'error');
+      }
+      el.addEventListener('input', enforce);
+      el.addEventListener('paste', function() { setTimeout(enforce, 0); });
+      el.addEventListener('change', enforce);
+    });
+  }
+
+  function saveJdAuthInline() {
+    if (!currentStore || !isJdPlatform(currentStore.platform)) return;
+    ensureJdAuth(currentStore);
+    var appKey = clampTemuField(value('inlineJdAppKey'), JD_APP_KEY_MAX).trim();
+    var token = clampTemuField(value('inlineJdToken'), JD_TOKEN_MAX).trim();
+    var refreshToken = clampTemuField(value('inlineJdRefreshToken'), JD_REFRESH_TOKEN_MAX).trim();
+
+    var oldAppKey = currentStore.appKey || '';
+    var oldToken = currentStore.token || '';
+    var oldRefreshToken = currentStore.refreshToken || '';
+    var oldAuthStatus = currentStore.authStatus || '未授权';
+    var oldAuthTime = currentStore.authTime || '—';
+    var oldAuthExpire = currentStore.authExpire || '—';
+    currentStore.appKey = appKey;
+    currentStore.token = token;
+    currentStore.refreshToken = refreshToken;
+    currentStore.jdAuthEdited = true;
+    applyJdAuthFromTokens(currentStore);
+
+    var changes = [];
+    if (oldAppKey !== appKey) changes.push('appKey：' + formatLogValue(oldAppKey) + ' → ' + formatLogValue(appKey));
+    if (oldToken !== token) changes.push('token：' + formatLogValue(oldToken) + ' → ' + formatLogValue(token));
+    if (oldRefreshToken !== refreshToken) changes.push('refresh_token：' + formatLogValue(oldRefreshToken) + ' → ' + formatLogValue(refreshToken));
+    if (oldAuthStatus !== currentStore.authStatus) changes.push('授权状态：' + formatLogValue(oldAuthStatus) + ' → ' + formatLogValue(currentStore.authStatus));
+    if (oldAuthTime !== (currentStore.authTime || '—')) changes.push('授权时间：' + formatLogValue(oldAuthTime) + ' → ' + formatLogValue(currentStore.authTime));
+    if (oldAuthExpire !== (currentStore.authExpire || '—')) changes.push('过期时间：' + formatLogValue(oldAuthExpire) + ' → ' + formatLogValue(currentStore.authExpire));
+    if (changes.length) {
+      pushOperationLog(currentStore, '授权', '编辑', changes.join('；'));
+    } else {
+      pushOperationLog(currentStore, '授权', '编辑', '授权信息保存，字段无变更');
+    }
+
+    renderTable();
+    renderJdAuthSummary(currentStore);
+    setJdAuthViewMode();
+    renderOperationLogs(currentStore);
+    toast(storeHasJdAuth(currentStore) ? '授权信息保存成功，已更新授权状态' : '授权信息已保存（未填写凭证，保持未授权）');
   }
 
   function shouldShowAlibabaAuthTip(store) {
@@ -2280,6 +2466,8 @@
         enterOzonAuthEdit(shouldShowOzonAuthTip(currentStore));
       } else if (is1688Platform(currentStore.platform)) {
         enterAlibabaAuthEdit(shouldShowAlibabaAuthTip(currentStore));
+      } else if (isJdPlatform(currentStore.platform)) {
+        enterJdAuthEdit(shouldShowJdAuthTip(currentStore));
       }
     }
   }
@@ -2314,6 +2502,9 @@
     bindAlibabaAuthInputLimits();
     $('btnOzonAuthEdit').addEventListener('click', function(){ enterOzonAuthEdit(false); });
     $('btnOzonAuthSave').addEventListener('click', saveOzonAuthInline);
+    $('btnJdAuthEdit').addEventListener('click', function(){ enterJdAuthEdit(false); });
+    $('btnJdAuthSave').addEventListener('click', saveJdAuthInline);
+    bindJdAuthInputLimits();
     $('btnBatchDownloadPayment').addEventListener('click', downloadSelectedPaymentInfo);
     $('authOrderTokenTabs').addEventListener('click', function(e) {
       var tab = e.target.closest('.token-region-tab');
@@ -2680,10 +2871,12 @@
       var needTemuAuth = savedOrigin === 'create' && isTemuPlatform(currentStore.platform);
       var needOzonAuth = savedOrigin === 'create' && isOzonPlatform(currentStore.platform);
       var needAlibabaAuth = savedOrigin === 'create' && is1688Platform(currentStore.platform);
+      var needJdAuth = savedOrigin === 'create' && isJdPlatform(currentStore.platform);
       if (needTemuAuth) currentStore._pendingTemuAuthHighlight = true;
       if (needOzonAuth) currentStore._pendingOzonAuthHighlight = true;
       if (needAlibabaAuth) currentStore._pendingAlibabaAuthHighlight = true;
-      var needAuth = needTemuAuth || needOzonAuth || needAlibabaAuth;
+      if (needJdAuth) currentStore._pendingJdAuthHighlight = true;
+      var needAuth = needTemuAuth || needOzonAuth || needAlibabaAuth || needJdAuth;
       if (savedOrigin === 'detail' || needAuth || savedOrigin === 'create') {
         openDetail(currentStore);
         activateDetailTab(needAuth ? 'auth' : 'biz');
@@ -2695,6 +2888,8 @@
         toast('请在授权处完善 Client ID、API Key', 'success');
       } else if (needAlibabaAuth) {
         toast('请在授权处完善 access Token', 'success');
+      } else if (needJdAuth) {
+        toast('请在授权处完善 appKey、token、refresh_token', 'success');
       }
     });
   }
