@@ -625,7 +625,7 @@ window.STORE_DATA = [
     registrationCompany: '云易盒科技有限公司',
     hasDeposit: false,
     depositRefundStatus: '无需退回',
-    remarks: '1688 店铺 Token 授权。',
+    remarks: '1688 店铺通过跳转授权完成授权。',
     accessToken: '6200819d9366af1383023a19907ZZf9048e4c14fd56333b263685215',
     alibabaAuthEdited: true,
     adAuthStatus: '未授权',
