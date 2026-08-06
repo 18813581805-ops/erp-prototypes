@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>店铺管理 · 跨境电商 ERP</title>
   <link rel="stylesheet" href="../../ui-library/tokens.css" />
-  <link rel="stylesheet" href="styles.css?v=202608061010" />
+  <link rel="stylesheet" href="styles.css?v=202608061015" />
 </head>
 <body>
 <div class="erp-shell">
@@ -476,51 +476,58 @@
             <div class="desc-item"><span class="desc-label">主账号信息</span><span class="desc-value" id="temuAuthMainAccount">—</span></div>
           </div>
 
-          <div class="card-title" style="margin-top:20px;">商品拉取 Token 信息</div>
-          <p class="token-hint">平台限制，token按照店铺维度，不用区分地区</p>
-          <div class="token-panel" id="authProductTokenPanelView">
-            <div class="token-form-row"><span class="token-label">access_token:</span><span class="token-value" id="authProductAccessToken">—</span></div>
-            <div class="token-form-row"><span class="token-label">App Key:</span><span class="token-value" id="authProductAppKey">—</span></div>
-            <div class="token-form-row"><span class="token-label">App Secret:</span><span class="token-value" id="authProductAppSecret">—</span></div>
+          <div class="token-kind-tabs" id="temuTokenKindTabs">
+            <button type="button" class="token-kind-tab active" data-token-kind="product">商品拉取 Token 信息</button>
+            <button type="button" class="token-kind-tab" data-token-kind="order">订单拉取 Token 信息</button>
           </div>
-          <div class="token-panel token-panel-edit" id="authProductTokenPanelEdit" hidden>
-            <div class="token-form-row">
-              <label class="token-label" for="editProductAccessToken">access_token:</label>
-              <input class="form-input temu-auth-input" id="editProductAccessToken" placeholder="accessToken" maxlength="128" />
+
+          <div class="temu-token-pane" id="temuTokenPaneProduct">
+            <p class="token-hint">平台限制，token按照店铺维度，不用区分地区</p>
+            <div class="token-panel" id="authProductTokenPanelView">
+              <div class="token-form-row"><span class="token-label">access_token:</span><span class="token-value" id="authProductAccessToken">—</span></div>
+              <div class="token-form-row"><span class="token-label">App Key:</span><span class="token-value" id="authProductAppKey">—</span></div>
+              <div class="token-form-row"><span class="token-label">App Secret:</span><span class="token-value" id="authProductAppSecret">—</span></div>
             </div>
-            <div class="token-form-row">
-              <label class="token-label" for="editProductAppKey">App Key:</label>
-              <input class="form-input temu-auth-input" id="editProductAppKey" placeholder="appKey" maxlength="64" />
-            </div>
-            <div class="token-form-row">
-              <label class="token-label" for="editProductAppSecret">App Secret:</label>
-              <input class="form-input temu-auth-input" id="editProductAppSecret" placeholder="appSecret" maxlength="64" />
+            <div class="token-panel token-panel-edit" id="authProductTokenPanelEdit" hidden>
+              <div class="token-form-row">
+                <label class="token-label" for="editProductAccessToken">access_token:</label>
+                <input class="form-input temu-auth-input" id="editProductAccessToken" placeholder="accessToken" maxlength="128" />
+              </div>
+              <div class="token-form-row">
+                <label class="token-label" for="editProductAppKey">App Key:</label>
+                <input class="form-input temu-auth-input" id="editProductAppKey" placeholder="appKey" maxlength="64" />
+              </div>
+              <div class="token-form-row">
+                <label class="token-label" for="editProductAppSecret">App Secret:</label>
+                <input class="form-input temu-auth-input" id="editProductAppSecret" placeholder="appSecret" maxlength="64" />
+              </div>
             </div>
           </div>
 
-          <div class="card-title" style="margin-top:20px;">订单拉取 Token 信息</div>
-          <div class="token-region-tabs" id="authOrderTokenTabs">
-            <button type="button" class="token-region-tab active" data-region="us">美区</button>
-            <button type="button" class="token-region-tab" data-region="eu">欧区</button>
-            <button type="button" class="token-region-tab" data-region="global">全球</button>
-          </div>
-          <div class="token-panel" id="authOrderTokenPanelView">
-            <div class="token-form-row"><span class="token-label">access_token:</span><span class="token-value" id="authOrderAccessToken">—</span></div>
-            <div class="token-form-row"><span class="token-label">App Key:</span><span class="token-value" id="authOrderAppKey">—</span></div>
-            <div class="token-form-row"><span class="token-label">App Secret:</span><span class="token-value" id="authOrderAppSecret">—</span></div>
-          </div>
-          <div class="token-panel token-panel-edit" id="authOrderTokenPanelEdit" hidden>
-            <div class="token-form-row">
-              <label class="token-label" for="editOrderAccessToken">access_token:</label>
-              <input class="form-input temu-auth-input" id="editOrderAccessToken" placeholder="accessToken" maxlength="128" />
+          <div class="temu-token-pane" id="temuTokenPaneOrder" hidden>
+            <div class="token-region-tabs" id="authOrderTokenTabs">
+              <button type="button" class="token-region-tab active" data-region="us">美区</button>
+              <button type="button" class="token-region-tab" data-region="eu">欧区</button>
+              <button type="button" class="token-region-tab" data-region="global">全球</button>
             </div>
-            <div class="token-form-row">
-              <label class="token-label" for="editOrderAppKey">App Key:</label>
-              <input class="form-input temu-auth-input" id="editOrderAppKey" placeholder="appKey" maxlength="64" />
+            <div class="token-panel" id="authOrderTokenPanelView">
+              <div class="token-form-row"><span class="token-label">access_token:</span><span class="token-value" id="authOrderAccessToken">—</span></div>
+              <div class="token-form-row"><span class="token-label">App Key:</span><span class="token-value" id="authOrderAppKey">—</span></div>
+              <div class="token-form-row"><span class="token-label">App Secret:</span><span class="token-value" id="authOrderAppSecret">—</span></div>
             </div>
-            <div class="token-form-row">
-              <label class="token-label" for="editOrderAppSecret">App Secret:</label>
-              <input class="form-input temu-auth-input" id="editOrderAppSecret" placeholder="appSecret" maxlength="64" />
+            <div class="token-panel token-panel-edit" id="authOrderTokenPanelEdit" hidden>
+              <div class="token-form-row">
+                <label class="token-label" for="editOrderAccessToken">access_token:</label>
+                <input class="form-input temu-auth-input" id="editOrderAccessToken" placeholder="accessToken" maxlength="128" />
+              </div>
+              <div class="token-form-row">
+                <label class="token-label" for="editOrderAppKey">App Key:</label>
+                <input class="form-input temu-auth-input" id="editOrderAppKey" placeholder="appKey" maxlength="64" />
+              </div>
+              <div class="token-form-row">
+                <label class="token-label" for="editOrderAppSecret">App Secret:</label>
+                <input class="form-input temu-auth-input" id="editOrderAppSecret" placeholder="appSecret" maxlength="64" />
+              </div>
             </div>
           </div>
           <p class="form-help" style="margin-top:12px;">商品拉取、订单拉取 Token 信息均为非必填；保存后将据此更新授权状态与有效期。</p>
@@ -791,7 +798,7 @@
   </div>
 </div>
 
-<script src="data.js?v=202608061010"></script>
-<script src="script.js?v=202608061010"></script>
+<script src="data.js?v=202608061015"></script>
+<script src="script.js?v=202608061015"></script>
 </body>
 </html>
