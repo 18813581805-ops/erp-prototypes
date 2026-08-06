@@ -16,6 +16,7 @@
   var creatingBasicStore = false;
   var editOrderTokenRegion = 'us';
   var authOrderTokenRegion = 'us';
+  var temuTokenKind = 'product';
   var editOrderTokenDraft = null;
   var temuAuthEditing = false;
   var temuAuthHighlight = false;
@@ -1910,6 +1911,7 @@
     $('ozonAuthCard').hidden = !isOzon;
     if (isTemu) {
       authOrderTokenRegion = 'us';
+      temuTokenKind = 'product';
       renderTemuAuthSummary(store);
       if (store._pendingTemuAuthHighlight) {
         enterTemuAuthEdit(true);
@@ -2218,6 +2220,20 @@
     });
   }
 
+  function setTemuTokenKindTabs(kind) {
+    temuTokenKind = kind === 'order' ? 'order' : 'product';
+    var tabs = $('temuTokenKindTabs');
+    if (tabs) {
+      tabs.querySelectorAll('.token-kind-tab').forEach(function(tab) {
+        tab.classList.toggle('active', tab.dataset.tokenKind === temuTokenKind);
+      });
+    }
+    var productPane = $('temuTokenPaneProduct');
+    var orderPane = $('temuTokenPaneOrder');
+    if (productPane) productPane.hidden = temuTokenKind !== 'product';
+    if (orderPane) orderPane.hidden = temuTokenKind !== 'order';
+  }
+
   function renderAuthOrderTokenRegion(store, region) {
     ensureTemuTokens(store);
     var token = store.orderPullTokens[region] || emptyTokenTriplet();
@@ -2302,6 +2318,15 @@
       setTokenRegionTabs('authOrderTokenTabs', authOrderTokenRegion);
       renderAuthOrderTokenRegion(currentStore, authOrderTokenRegion);
     });
+    var kindTabs = $('temuTokenKindTabs');
+    if (kindTabs) {
+      kindTabs.addEventListener('click', function(e) {
+        var tab = e.target.closest('.token-kind-tab');
+        if (!tab) return;
+        setTemuTokenKindTabs(tab.dataset.tokenKind);
+        syncTemuAuthChrome();
+      });
+    }
   }
 
   function openReAuth(store) {
@@ -2675,6 +2700,7 @@
     if (orderEdit) orderEdit.hidden = !temuAuthEditing;
     if (productView) productView.hidden = temuAuthEditing;
     if (productEdit) productEdit.hidden = !temuAuthEditing;
+    setTemuTokenKindTabs(temuTokenKind);
   }
 
   function renderTemuAuthSummary(store) {
@@ -2690,6 +2716,7 @@
     renderAuthOrderTokenRegion(store, authOrderTokenRegion);
     renderAuthProductToken(store);
     setTokenRegionTabs('authOrderTokenTabs', authOrderTokenRegion);
+    setTemuTokenKindTabs(temuTokenKind);
     syncTemuAuthChrome();
   }
 
@@ -2719,8 +2746,10 @@
     $('editProductAppKey').value = product.appKey || '';
     $('editProductAppSecret').value = product.appSecret || '';
     setTokenRegionTabs('authOrderTokenTabs', authOrderTokenRegion);
+    setTemuTokenKindTabs(temuTokenKind);
     syncTemuAuthChrome();
-    $('editOrderAccessToken').focus();
+    if (temuTokenKind === 'product') $('editProductAccessToken').focus();
+    else $('editOrderAccessToken').focus();
   }
 
   function tokenTripletLog(label, oldToken, newToken) {
