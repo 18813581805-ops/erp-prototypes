@@ -370,7 +370,7 @@
     if (storeHasOzonAuth(store)) {
       store.authStatus = '已授权';
       store.authTime = formatNow();
-      store.authExpire = nextYear();
+      store.authExpire = '无限期';
       store.syncOrderTime = formatNow();
     } else {
       store.authStatus = '未授权';
@@ -2448,7 +2448,7 @@
   }
 
   function remainDays(expireText) {
-    if (!expireText || expireText === '—') return '—';
+    if (!expireText || expireText === '—' || expireText === '-' || expireText === '无限期') return '—';
     var remain = Math.ceil((new Date(expireText) - new Date()) / (1000*60*60*24));
     return remain > 0 ? remain + ' 天' : '已过期';
   }
