@@ -378,11 +378,12 @@ th.col-alias{z-index:4;background:#fafafa!important}
 
 /* ===== Edit Form ===== */
 .form-section-title{font-size:13px;font-weight:600;color:var(--text);padding-bottom:8px;margin:4px 0 12px;border-bottom:1px solid var(--border-light)}
-.token-kind-tabs{display:flex;gap:0;margin:16px 0 0;border-bottom:1px solid var(--border-light)}
-.token-kind-tab{height:36px;padding:0 16px;border:none;background:transparent;color:var(--muted);font-size:14px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.token-kind-tabs{display:flex;gap:6px;margin:16px 0 0;padding:4px;border-bottom:none;border-radius:8px;background:#f0f2f5}
+.token-kind-tab{flex:1;height:36px;padding:0 12px;border:none;border-radius:6px;background:transparent;color:var(--muted);font-size:14px;cursor:pointer;transition:all .2s ease;box-shadow:none}
 .token-kind-tab:hover{color:var(--primary)}
-.token-kind-tab.active{color:var(--primary);font-weight:600;border-bottom-color:var(--primary)}
+.token-kind-tab.active{color:var(--primary);font-weight:600;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.06)}
 .temu-token-pane{margin-top:12px}
+.create-biz-tip{margin:0 0 14px;padding:10px 12px;border:1px solid #91caff;border-radius:8px;background:#e6f4ff;color:#0958d9;font-size:13px;line-height:1.6}
 .token-region-tabs{display:flex;gap:0;margin-bottom:0;border-bottom:1px solid var(--border-light)}
 .token-region-tab{height:34px;padding:0 16px;border:none;background:transparent;color:var(--muted);font-size:13px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
 .token-region-tab:hover{color:var(--primary)}
