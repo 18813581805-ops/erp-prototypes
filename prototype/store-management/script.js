@@ -675,7 +675,7 @@
       '<td class="col-actions temu-shared-cell"><div class="cell-actions">' +
         '<button class="table-action-link" data-op="详情" data-id="' + primary.id + '" type="button">详情</button>' +
         '<button class="table-action-link" data-op="编辑" data-id="' + primary.id + '" type="button">编辑</button>' +
-        '<button class="table-action-link" data-op="立即授权" data-id="' + primary.id + '" type="button">立即授权 ▾</button>' +
+        '<button class="table-action-link" data-op="授权" data-id="' + primary.id + '" type="button">授权</button>' +
         '<button class="table-action-more" data-op="更多" data-id="' + primary.id + '" type="button">更多 ▾</button>' +
       '</div></td>' +
     '</tr>';
@@ -692,7 +692,7 @@
       '<button class="table-action-link" data-op="详情" data-id="' + s.id + '" type="button">详情</button>' +
       '<button class="table-action-link" data-op="编辑" data-id="' + s.id + '" type="button">编辑</button>' +
       (supportsQuickAuth(s.platform)
-        ? '<button class="table-action-link" data-op="立即授权" data-id="' + s.id + '" type="button">立即授权 ▾</button>'
+        ? '<button class="table-action-link" data-op="授权" data-id="' + s.id + '" type="button">授权</button>'
         : '') +
       '<button class="table-action-more" data-op="更多" data-id="' + s.id + '" type="button">更多 ▾</button>';
     var shopeeExt = '—';
@@ -946,53 +946,53 @@
     if (menu) menu.remove();
   }
 
+  function closeAuthTypeModal() {
+    var modal = $('modalAuthType');
+    if (modal) modal.hidden = true;
+    pendingAuthStore = null;
+  }
+
+  var pendingAuthStore = null;
+
   function supportsAdAuth(platform) {
     return platform === 'Amazon' || platform === 'Shopee' || platform === 'TikTok Shop';
   }
 
-  function fillRowAuthMenu(menu, platform) {
-    var options = authOptionsForPlatform(platform);
-
-    menu.querySelectorAll('.action-menu-item').forEach(function(item) {
-      var type = item.dataset.authType;
-      var visible = options.indexOf(type) !== -1;
-      item.hidden = !visible;
-      item.disabled = false;
-      item.classList.remove('is-disabled');
-      item.title = '';
-    });
-  }
-
-  function openRowAuthMenu(anchor, store) {
+  function openAuthTypeModal(store) {
     closeRowAuthMenu();
     closeActionMenu();
-    var menu = document.createElement('div');
-    menu.id = 'rowAuthMenu';
-    menu.className = 'row-auth-menu';
-    menu.innerHTML =
-      '<button type="button" class="action-menu-item" data-auth-type="store">店铺授权</button>' +
-      '<button type="button" class="action-menu-item" data-auth-type="ad">广告授权</button>' +
-      '<button type="button" class="action-menu-item" data-auth-type="affiliate">联盟授权</button>';
-    fillRowAuthMenu(menu, store.platform);
-    document.body.appendChild(menu);
+    pendingAuthStore = store;
+    var options = authOptionsForPlatform(store.platform);
+    var list = $('authTypeOptionList');
+    if (!list) return;
+    list.innerHTML = options.map(function(type) {
+      return '<button type="button" class="auth-type-option" data-auth-type="' + type + '">' +
+        '<span class="auth-type-option-title">' + authTypeLabel(type) + '</span>' +
+        '<span class="auth-type-option-desc">跳转至对应授权页面或链接</span>' +
+      '</button>';
+    }).join('');
+    $('authTypeModalStore').textContent = (store.alias || store.name || '—') + ' · ' + (store.platform || '');
+    $('modalAuthType').hidden = false;
+  }
 
-    var rect = anchor.getBoundingClientRect();
-    menu.style.top = Math.min(rect.bottom + 6, window.innerHeight - menu.offsetHeight - 12) + 'px';
-    menu.style.left = Math.max(12, Math.min(rect.left, window.innerWidth - menu.offsetWidth - 12)) + 'px';
-
-    menu.addEventListener('click', function(e) {
-      var item = e.target.closest('.action-menu-item');
-      if (!item || item.hidden || item.disabled) return;
-      e.stopPropagation();
-      closeRowAuthMenu();
-      startQuickAuth(store, item.dataset.authType);
-    });
+  function handleRowAuthClick(store) {
+    if (!store) return;
+    if (!supportsQuickAuth(store.platform)) {
+      toast(store.platform + ' 不支持授权', 'error');
+      return;
+    }
+    var options = authOptionsForPlatform(store.platform);
+    if (options.length <= 1) {
+      startQuickAuth(store, options[0] || 'store');
+      return;
+    }
+    openAuthTypeModal(store);
   }
 
   function startQuickAuth(store, authType) {
     if (!store) return;
     if (!supportsQuickAuth(store.platform)) {
-      toast(store.platform + ' 不支持立即授权', 'error');
+      toast(store.platform + ' 不支持授权', 'error');
       return;
     }
 
@@ -1079,8 +1079,27 @@
       closeRowAuthMenu();
     });
     document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') closeRowAuthMenu();
+      if (e.key === 'Escape') {
+        closeRowAuthMenu();
+        closeAuthTypeModal();
+      }
     });
+    ['btnCloseAuthType', 'btnCancelAuthType'].forEach(function(id) {
+      var el = $(id);
+      if (!el) return;
+      el.addEventListener('click', closeAuthTypeModal);
+    });
+    var list = $('authTypeOptionList');
+    if (list) {
+      list.addEventListener('click', function(e) {
+        var item = e.target.closest('.auth-type-option');
+        if (!item || !pendingAuthStore) return;
+        var type = item.dataset.authType;
+        var store = pendingAuthStore;
+        closeAuthTypeModal();
+        startQuickAuth(store, type);
+      });
+    }
   }
 
   function enhanceSelects() {
@@ -1388,7 +1407,7 @@
         openDetail(store);
         openEditBasic(store, 'detail');
       }
-      if (btn.dataset.op === '立即授权') openRowAuthMenu(btn, store);
+      if (btn.dataset.op === '授权') handleRowAuthClick(store);
       if (btn.dataset.op === '子店铺') openChildStores(store);
       if (btn.dataset.op === '更多') openRowMoreMenu(btn, store);
     });
