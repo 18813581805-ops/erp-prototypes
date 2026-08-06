@@ -400,6 +400,7 @@ window.STORE_DATA = [
     storeEmail: 'tiktok-id@yiyihe.com',
     adAccountId: 'act_73910288',
     bcId: 'bc_448201',
+    isMall: true,
     browserName: '紫鸟',
     browserStoreName: 'TikTok ID 浏览器',
     accountType: '自注册',
