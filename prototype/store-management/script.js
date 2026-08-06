@@ -55,12 +55,12 @@
     if (el && el.tagName === 'SELECT') el.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
-  function toast(msg, type) {
+  function toast(msg, type, duration) {
     var el = document.createElement('div');
     el.className = 'toast ' + (type || 'success');
     el.textContent = msg;
     document.body.appendChild(el);
-    setTimeout(function(){ el.remove(); }, 2500);
+    setTimeout(function(){ el.remove(); }, duration || 2500);
   }
 
   function formatNow() {
@@ -2528,7 +2528,7 @@
       renderTable();
       if (isNew) {
         openEditBiz(currentStore, 'create');
-        toast('基础资料保存成功，请继续完善业务信息');
+        toast('基础资料已暂存。请继续编辑业务信息，保存后店铺才会新增成功', 'success', 4500);
       } else {
         if (editOrigin === 'detail' || editOrigin === 'create') openDetail(currentStore);
         toast('基础资料保存成功');
@@ -2544,6 +2544,10 @@
     if (editOrigin === 'table') $('drawerDetail').hidden = true;
     $('drawerEditBiz').hidden = false;
     var isNew = (origin === 'create');
+    var titleEl = document.querySelector('#drawerEditBiz .drawer-header h3');
+    if (titleEl) titleEl.textContent = isNew ? '完善业务信息' : '编辑业务信息';
+    var tipEl = $('editBizCreateTip');
+    if (tipEl) tipEl.hidden = !isNew;
     var deptSelect = $('editDept');
     if (store.dept) {
       var found = false;
@@ -2658,7 +2662,7 @@
         openDetail(currentStore);
         activateDetailTab(needAuth ? 'auth' : 'biz');
       }
-      toast('业务信息保存成功');
+      toast(savedOrigin === 'create' ? '业务信息已保存，店铺新增成功' : '业务信息保存成功');
       if (needTemuAuth) {
         toast('请在授权处完善订单/商品拉取 Token', 'success');
       } else if (needOzonAuth) {
