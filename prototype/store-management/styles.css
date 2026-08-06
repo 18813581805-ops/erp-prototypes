@@ -378,6 +378,11 @@ th.col-alias{z-index:4;background:#fafafa!important}
 
 /* ===== Edit Form ===== */
 .form-section-title{font-size:13px;font-weight:600;color:var(--text);padding-bottom:8px;margin:4px 0 12px;border-bottom:1px solid var(--border-light)}
+.token-kind-tabs{display:flex;gap:0;margin:16px 0 0;border-bottom:1px solid var(--border-light)}
+.token-kind-tab{height:36px;padding:0 16px;border:none;background:transparent;color:var(--muted);font-size:14px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.token-kind-tab:hover{color:var(--primary)}
+.token-kind-tab.active{color:var(--primary);font-weight:600;border-bottom-color:var(--primary)}
+.temu-token-pane{margin-top:12px}
 .token-region-tabs{display:flex;gap:0;margin-bottom:0;border-bottom:1px solid var(--border-light)}
 .token-region-tab{height:34px;padding:0 16px;border:none;background:transparent;color:var(--muted);font-size:13px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
 .token-region-tab:hover{color:var(--primary)}
