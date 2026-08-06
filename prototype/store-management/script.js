@@ -467,13 +467,17 @@
     syncSelect('editStoreType');
   }
 
+  function supportsIsMallField(platform) {
+    return platform === 'Shopee' || platform === 'TikTok Shop' || platform === 'Lazada';
+  }
+
   function syncIsMallField(platform, currentValue) {
     var group = $('editIsMallGroup');
     var select = $('editIsMall');
     if (!group || !select) return;
-    var isShopee = platform === 'Shopee';
-    group.hidden = !isShopee;
-    if (!isShopee) {
+    var show = supportsIsMallField(platform);
+    group.hidden = !show;
+    if (!show) {
       select.value = '';
       syncSelect('editIsMall');
       return;
@@ -789,7 +793,7 @@
     rows += '<td class="col-platform-type">' + (s.platformStoreType || '—') + '</td>';
     rows += '<td class="col-sub platform-col platform-shopee">' + (s.platform === 'Shopee' ? (s.subName || '—') : '—') + '</td>';
     rows += '<td class="col-shopee-ext platform-col platform-shopee">' + shopeeExt + '</td>';
-    rows += '<td class="col-mall platform-col platform-mall">' + (s.platform === 'Shopee' ? (s.isMall ? '是' : '否') : '—') + '</td>';
+    rows += '<td class="col-mall platform-col platform-mall">' + (supportsIsMallField(s.platform) ? (s.isMall ? '是' : '否') : '—') + '</td>';
     rows += '<td class="col-child-count platform-col platform-shopee">' + childCountHtml + '</td>';
     rows += '<td class="col-ad-account platform-col platform-tiktok">' + (s.platform === 'TikTok Shop' ? (s.adAccountId || '—') : '—') + '</td>';
     rows += '<td class="col-bc-id platform-col platform-tiktok">' + (s.platform === 'TikTok Shop' ? (s.bcId || '—') : '—') + '</td>';
@@ -857,7 +861,7 @@
     var showShopee = activePlatform === 'Shopee';
     var showAmazon = activePlatform === 'Amazon';
     var showTiktok = activePlatform === 'TikTok Shop';
-    var showMall = activePlatform === 'Shopee' || activePlatform === '全部平台';
+    var showMall = activePlatform === '全部平台' || supportsIsMallField(activePlatform);
     var showSiteCol = activePlatform === '全部平台' || supportsSiteField(activePlatform);
     var showTypeCol = activePlatform === '全部平台' || supportsStoreType(activePlatform);
     document.querySelectorAll('.platform-shopee').forEach(function(el){ el.classList.toggle('is-hidden-col', !showShopee); });
@@ -1932,6 +1936,7 @@
     $('basicAdAccountId').textContent = store.platform === 'TikTok Shop' ? (store.adAccountId || '—') : '—';
     $('basicBcId').textContent = store.platform === 'TikTok Shop' ? (store.bcId || '—') : '—';
     document.querySelectorAll('.platform-detail-shopee').forEach(function(el){ el.hidden = store.platform !== 'Shopee'; });
+    document.querySelectorAll('.platform-detail-mall').forEach(function(el){ el.hidden = !supportsIsMallField(store.platform); });
     document.querySelectorAll('.platform-detail-tiktok').forEach(function(el){ el.hidden = store.platform !== 'TikTok Shop'; });
     $('basicBrowserName').textContent = store.browserName || '—';
     $('basicBrowserStore').textContent = store.browserStoreName || '—';
