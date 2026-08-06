@@ -1062,12 +1062,6 @@
       enterOzonAuthEdit(true);
       return;
     }
-    if (authType === 'store' && is1688Platform(platform)) {
-      openDetail(store);
-      activateDetailTab('auth');
-      enterAlibabaAuthEdit(true);
-      return;
-    }
     if (authType === 'store' && isJdPlatform(platform)) {
       openDetail(store);
       activateDetailTab('auth');
@@ -1947,12 +1941,11 @@
 
     var isTemu = isTemuPlatform(store.platform);
     var isOzon = isOzonPlatform(store.platform);
-    var is1688 = is1688Platform(store.platform);
     var isJd = isJdPlatform(store.platform);
     $('temuAuthCard').hidden = !isTemu;
-    $('alibabaAuthCard').hidden = !is1688;
+    $('alibabaAuthCard').hidden = true;
     $('jdAuthCard').hidden = !isJd;
-    $('genericAuthCard').hidden = isOzon || isTemu || is1688 || isJd;
+    $('genericAuthCard').hidden = isOzon || isTemu || isJd;
     $('ozonAuthCard').hidden = !isOzon;
     if (isTemu) {
       authOrderTokenRegion = 'us';
@@ -1981,18 +1974,8 @@
       ozonAuthEditing = false;
       ozonAuthHighlight = false;
     }
-    if (is1688) {
-      renderAlibabaAuthSummary(store);
-      if (store._pendingAlibabaAuthHighlight) {
-        enterAlibabaAuthEdit(true);
-        store._pendingAlibabaAuthHighlight = false;
-      } else {
-        setAlibabaAuthViewMode();
-      }
-    } else {
-      alibabaAuthEditing = false;
-      alibabaAuthHighlight = false;
-    }
+    alibabaAuthEditing = false;
+    alibabaAuthHighlight = false;
     if (isJd) {
       renderJdAuthSummary(store);
       if (store._pendingJdAuthHighlight) {
@@ -2464,8 +2447,6 @@
         enterTemuAuthEdit(shouldShowTemuAuthTip(currentStore));
       } else if (isOzonPlatform(currentStore.platform)) {
         enterOzonAuthEdit(shouldShowOzonAuthTip(currentStore));
-      } else if (is1688Platform(currentStore.platform)) {
-        enterAlibabaAuthEdit(shouldShowAlibabaAuthTip(currentStore));
       } else if (isJdPlatform(currentStore.platform)) {
         enterJdAuthEdit(shouldShowJdAuthTip(currentStore));
       }
@@ -2870,13 +2851,11 @@
       var savedOrigin = editOrigin;
       var needTemuAuth = savedOrigin === 'create' && isTemuPlatform(currentStore.platform);
       var needOzonAuth = savedOrigin === 'create' && isOzonPlatform(currentStore.platform);
-      var needAlibabaAuth = savedOrigin === 'create' && is1688Platform(currentStore.platform);
       var needJdAuth = savedOrigin === 'create' && isJdPlatform(currentStore.platform);
       if (needTemuAuth) currentStore._pendingTemuAuthHighlight = true;
       if (needOzonAuth) currentStore._pendingOzonAuthHighlight = true;
-      if (needAlibabaAuth) currentStore._pendingAlibabaAuthHighlight = true;
       if (needJdAuth) currentStore._pendingJdAuthHighlight = true;
-      var needAuth = needTemuAuth || needOzonAuth || needAlibabaAuth || needJdAuth;
+      var needAuth = needTemuAuth || needOzonAuth || needJdAuth;
       if (savedOrigin === 'detail' || needAuth || savedOrigin === 'create') {
         openDetail(currentStore);
         activateDetailTab(needAuth ? 'auth' : 'biz');
@@ -2886,8 +2865,6 @@
         toast('请在授权处完善订单/商品拉取 Token', 'success');
       } else if (needOzonAuth) {
         toast('请在授权处完善 Client ID、API Key', 'success');
-      } else if (needAlibabaAuth) {
-        toast('请在授权处完善 access Token', 'success');
       } else if (needJdAuth) {
         toast('请在授权处完善 appKey、token、refresh_token', 'success');
       }
