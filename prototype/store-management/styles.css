@@ -420,6 +420,8 @@ th.col-alias{z-index:4;background:#fafafa!important}
 .ozon-view-value{display:block;min-height:34px;padding:6px 10px;border:1px solid var(--border-light);border-radius:var(--radius);background:#fff;font-size:13px;color:var(--text);line-height:20px;word-break:break-all}
 .ozon-field-control .token-field-note{max-width:440px;white-space:nowrap}
 #temuAuthCard .token-panel-edit .temu-auth-input{width:100%;max-width:440px;box-sizing:border-box}
+#temuAuthCard .temu-auth-input:disabled{color:var(--text);background:#fafafa;cursor:default;opacity:1}
+.ozon-auth-input:disabled,.alibaba-auth-input:disabled{color:var(--text);background:#fafafa;cursor:default;opacity:1}
 .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0 14px}
 .form-wide{grid-column:1/-1}
 .textarea{height:76px;padding-top:8px;resize:vertical}
