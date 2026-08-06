@@ -966,9 +966,8 @@
     var list = $('authTypeOptionList');
     if (!list) return;
     list.innerHTML = options.map(function(type) {
-      return '<button type="button" class="auth-type-option" data-auth-type="' + type + '">' +
-        '<span class="auth-type-option-title">' + authTypeLabel(type) + '</span>' +
-        '<span class="auth-type-option-desc">跳转至对应授权页面或链接</span>' +
+      return '<button type="button" class="btn auth-type-option" data-auth-type="' + type + '">' +
+        authTypeLabel(type) +
       '</button>';
     }).join('');
     $('authTypeModalStore').textContent = (store.alias || store.name || '—') + ' · ' + (store.platform || '');
