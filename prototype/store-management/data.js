@@ -877,12 +877,15 @@ window.STORE_DATA = [
     accountType: '自注册',
     registrationType: '企业',
     registrationCompany: '云易盒科技有限公司',
-    remarks: '其他平台 · 京东，无立即授权。',
+    remarks: '其他平台 · 京东，支持内联填写 appKey / token / refresh_token 授权。',
+    appKey: '',
+    token: '',
+    refreshToken: '',
     adAuthStatus: '未授权',
     affiliateAuthStatus: '未授权',
     paymentAccounts: [],
     permissions: ['订单查看'],
-    ops: ['详情', '编辑', '更多']
+    ops: ['详情', '编辑', '授权', '更多']
   },
   {
     id: 14,
