@@ -124,6 +124,11 @@ ul{margin:0;padding:0;list-style:none}
 .row-auth-menu .action-menu-item:disabled{color:rgba(0,0,0,.25);cursor:not-allowed}
 .row-auth-menu .action-menu-item.is-disabled:hover,
 .row-auth-menu .action-menu-item:disabled:hover{background:transparent;color:rgba(0,0,0,.25)}
+.auth-type-option-list{display:flex;flex-direction:column;gap:8px}
+.auth-type-option{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;text-align:left;cursor:pointer;transition:all .15s}
+.auth-type-option:hover{border-color:var(--primary);background:var(--primary-bg)}
+.auth-type-option-title{font-size:14px;font-weight:500;color:var(--text)}
+.auth-type-option-desc{font-size:12px;color:var(--subtle)}
 
 /* ===== Table ===== */
 .list-panel{margin-top:0;border-top:none;border-radius:0 0 8px 8px;overflow:hidden;min-width:0}
