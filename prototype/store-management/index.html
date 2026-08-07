@@ -1,14 +1,14 @@
 ﻿<!doctype html>
 <html lang="zh-CN">
 <head>
-  <!-- build:202608061637 -->
+  <!-- build:202608070956 -->
 <meta name="build-commit" content="ozon-ui-202608041520">
 <meta name="build-time" content="2026-08-04T15:20:00+08:00">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>店铺管理 · 跨境电商 ERP</title>
   <link rel="stylesheet" href="../../ui-library/tokens.css" />
-  <link rel="stylesheet" href="styles.css?v=202608061637" />
+  <link rel="stylesheet" href="styles.css?v=202608070956" />
 </head>
 <body>
 <div class="erp-shell">
@@ -156,6 +156,7 @@
               <th class="col-shopee-ext platform-col platform-shopee">主账号 / SIP</th>
               <th class="col-mall platform-col platform-mall">是否mall店</th>
               <th class="col-child-count platform-col platform-shopee">关联子店铺数</th>
+              <th class="col-ad-name platform-col platform-tiktok">广告户名称</th>
               <th class="col-ad-account platform-col platform-tiktok">广告户 ID</th>
               <th class="col-bc-id platform-col platform-tiktok">BC ID</th>
               <th class="col-bu">事业部</th>
@@ -417,6 +418,16 @@
             <div class="desc-item"><span class="desc-label">剩余天数</span><span class="desc-value" id="authRemain">—</span></div>
             <div class="desc-item"><span class="desc-label">主账号信息</span><span class="desc-value" id="authMainAccount">—</span></div>
           </div>
+        </div>
+
+        <!-- TikTok：广告授权信息（规则与列表气泡一致） -->
+        <div class="card" id="tiktokAdAuthCard" hidden>
+          <div class="card-title">广告授权信息</div>
+          <div class="ad-auth-meta" style="margin-bottom:12px;">
+            <span class="desc-label">广告授权状态</span>
+            <span id="tiktokAdAuthStatus" class="tag tag-gray">—</span>
+          </div>
+          <div id="tiktokAdAuthList" class="tk-ad-account-list"></div>
         </div>
 
         <!-- Ozon：内联授权编辑 -->
@@ -687,7 +698,7 @@
           </select>
         </div>
         <div class="form-group" id="editStoreTypeGroup"><label class="form-label required">店铺类型</label><select class="ant-select" id="editStoreType"><option value="">请选择店铺类型</option><option value="本土">本土</option><option value="全球">全球</option><option value="全托管">全托管</option><option value="半托管">半托管</option></select></div>
-        <div class="form-group platform-edit-shopee" id="editIsMallGroup" hidden>
+        <div class="form-group" id="editIsMallGroup" hidden>
           <label class="form-label required">是否mall店</label>
           <select class="ant-select" id="editIsMall">
             <option value="">请选择</option>
@@ -695,6 +706,11 @@
             <option value="否">否</option>
           </select>
         </div>
+      </div>
+      <div class="form-section" id="editTiktokAdAuthSection" hidden>
+        <div class="form-section-title">广告授权信息</div>
+        <p class="token-hint" style="margin-top:0;">展示规则与列表悬浮气泡一致：当前花费广告户置顶，已过滤废弃停用 / 待签约 / 确认失败</p>
+        <div id="editTiktokAdAuthList" class="tk-ad-account-list"></div>
       </div>
       <div class="form-section-title">账号环境与注册信息</div>
       <div class="form-grid">
@@ -842,7 +858,13 @@
   </div>
 </div>
 
-<script src="data.js?v=202608061637"></script>
-<script src="script.js?v=202608061637"></script>
+<!-- TikTok 广告户悬浮气泡 -->
+<div class="tk-ad-popover" id="tkAdAccountPopover" hidden>
+  <div class="tk-ad-popover-title">启用中的广告户</div>
+  <div id="tkAdAccountPopoverBody" class="tk-ad-account-list"></div>
+</div>
+
+<script src="data.js?v=202608070956"></script>
+<script src="script.js?v=202608070956"></script>
 </body>
 </html>
