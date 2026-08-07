@@ -467,9 +467,10 @@ th.col-alias{z-index:4;background:#fafafa!important}
 .tk-ad-popover[hidden]{display:none!important}
 .tk-ad-popover-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px}
 .tk-ad-account-list .empty-hint{padding:12px;color:var(--subtle);font-size:13px;background:#fafafa;border:1px dashed var(--border-light);border-radius:6px}
-.tk-ad-mini-table{width:100%;border-collapse:collapse;font-size:12px}
-.tk-ad-mini-table th,.tk-ad-mini-table td{padding:8px 10px;border-bottom:1px solid var(--border-light);text-align:left;vertical-align:middle}
+.tk-ad-mini-table{width:auto;max-width:100%;border-collapse:collapse;font-size:12px;table-layout:auto}
+.tk-ad-mini-table th,.tk-ad-mini-table td{padding:6px 12px;border-bottom:1px solid var(--border-light);text-align:left;vertical-align:middle;white-space:nowrap}
 .tk-ad-mini-table th{background:#fafafa;color:var(--muted);font-weight:600}
 .tk-ad-mini-table tr.is-current td{background:#f0f7ff}
+.tk-ad-mini-table th:not(:last-child),.tk-ad-mini-table td:not(:last-child){padding-right:20px}
 .tk-ad-current-tag{display:inline-block;margin-left:6px;padding:0 6px;height:18px;line-height:18px;border-radius:4px;background:#e6f4ff;color:#1677ff;font-size:11px}
 .ad-auth-meta{display:flex;align-items:center;gap:8px;font-size:13px}
