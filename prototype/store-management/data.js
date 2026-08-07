@@ -401,6 +401,71 @@ window.STORE_DATA = [
     adAccountId: 'act_73910288',
     bcId: 'bc_448201',
     isMall: true,
+    adAccounts: [
+      {
+        id: 'act_73910288',
+        name: '印尼主力广告户',
+        status: 'STATUS_ENABLE',
+        statusLabel: '启用中',
+        balance: 1280.5,
+        is_del: 0,
+        ad_create_time: '2026-03-12 09:20'
+      },
+      {
+        id: 'act_74000112',
+        name: '内容投放广告户',
+        status: 'STATUS_ENABLE',
+        statusLabel: '启用中',
+        balance: 0,
+        is_del: 0,
+        ad_create_time: '2026-05-01 14:10'
+      },
+      {
+        id: 'act_73880001',
+        name: '历史零余额户',
+        status: 'STATUS_ENABLE',
+        statusLabel: '启用中',
+        balance: 0,
+        is_del: 0,
+        ad_create_time: '2026-01-08 11:00'
+      },
+      {
+        id: 'act_73770099',
+        name: '待签约广告户',
+        status: 'STATUS_CONFIRM_FAIL',
+        statusLabel: '待签约',
+        balance: 50,
+        is_del: 0,
+        ad_create_time: '2026-04-20 16:00'
+      },
+      {
+        id: 'act_73660088',
+        name: '确认失败广告户',
+        status: 'STATUS_CONTRACT_PENDING',
+        statusLabel: '确认失败',
+        balance: 20,
+        is_del: 0,
+        ad_create_time: '2026-04-22 10:30'
+      },
+      {
+        id: 'act_73550077',
+        name: '已废弃广告户',
+        status: 'STATUS_DISABLE',
+        statusLabel: '废弃停用',
+        balance: 0,
+        is_del: 0,
+        ad_create_time: '2025-11-01 08:00'
+      },
+      {
+        id: 'act_73440066',
+        name: '已删除广告户',
+        status: 'STATUS_ENABLE',
+        statusLabel: '启用中',
+        balance: 999,
+        is_del: 1,
+        ad_create_time: '2026-02-01 12:00'
+      }
+    ],
     browserName: '紫鸟',
     browserStoreName: 'TikTok ID 浏览器',
     accountType: '自注册',
@@ -420,7 +485,7 @@ window.STORE_DATA = [
     depositRefundTime: '',
     depositRefundTransactionId: '',
     remarks: 'TikTok 广告授权后需设置广告数据更新时段。',
-    adAuthStatus: '未授权',
+    adAuthStatus: '已授权',
     affiliateAuthStatus: '未授权',
     relatedStores: [],
     unrecordedStores: 0,
