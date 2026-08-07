@@ -1,14 +1,14 @@
 ﻿<!doctype html>
 <html lang="zh-CN">
 <head>
-  <!-- build:202608071007 -->
+  <!-- build:202608071011 -->
 <meta name="build-commit" content="ozon-ui-202608041520">
 <meta name="build-time" content="2026-08-04T15:20:00+08:00">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>店铺管理 · 跨境电商 ERP</title>
   <link rel="stylesheet" href="../../ui-library/tokens.css" />
-  <link rel="stylesheet" href="styles.css?v=202608071007" />
+  <link rel="stylesheet" href="styles.css?v=202608071011" />
 </head>
 <body>
 <div class="erp-shell">
@@ -422,11 +422,13 @@
         <!-- TikTok：广告授权信息（规则与列表气泡一致） -->
         <div class="card" id="tiktokAdAuthCard" hidden>
           <div class="card-title">广告授权信息</div>
-          <div class="ad-auth-meta" style="margin-bottom:12px;">
-            <span class="desc-label">广告授权状态</span>
-            <span id="tiktokAdAuthStatus" class="tag tag-gray">—</span>
+          <div class="desc-grid" style="margin-bottom:14px;">
+            <div class="desc-item">
+              <span class="desc-label">广告授权状态</span>
+              <span id="tiktokAdAuthStatus" class="tag tag-gray">—</span>
+            </div>
           </div>
-          <div id="tiktokAdAuthList" class="tk-ad-account-list"></div>
+          <div id="tiktokAdAuthList" class="tk-ad-account-list tk-ad-account-panel"></div>
         </div>
 
         <!-- Ozon：内联授权编辑 -->
@@ -709,7 +711,7 @@
       <div class="form-section" id="editTiktokAdAuthSection" hidden>
         <div class="form-section-title">广告授权信息</div>
         <p class="token-hint" style="margin-top:0;">展示规则与列表悬浮气泡一致：当前花费广告户置顶，已过滤废弃停用 / 待签约 / 确认失败</p>
-        <div id="editTiktokAdAuthList" class="tk-ad-account-list"></div>
+        <div id="editTiktokAdAuthList" class="tk-ad-account-list tk-ad-account-panel"></div>
       </div>
       <div class="form-section-title">账号环境与注册信息</div>
       <div class="form-grid">
@@ -862,7 +864,7 @@
   <div id="tkAdAccountPopoverBody" class="tk-ad-account-list"></div>
 </div>
 
-<script src="data.js?v=202608071007"></script>
-<script src="script.js?v=202608071007"></script>
+<script src="data.js?v=202608071011"></script>
+<script src="script.js?v=202608071011"></script>
 </body>
 </html>
