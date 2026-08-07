@@ -955,7 +955,6 @@
       '<td class="col-mall platform-col platform-mall temu-shared-cell">—</td>' +
       '<td class="col-child-count platform-col platform-shopee temu-shared-cell">—</td>' +
       '<td class="col-ad-name platform-col platform-tiktok temu-shared-cell">—</td>' +
-      '<td class="col-ad-account platform-col platform-tiktok temu-shared-cell">—</td>' +
       '<td class="col-bc-id platform-col platform-tiktok temu-shared-cell">—</td>' +
       '<td class="col-bu temu-shared-cell">' + escapeHtml(bu) + '</td>' +
       '<td class="col-status temu-stack-cell">' + buildTemuStatusStackHtml(stores) + '</td>' +
@@ -1034,7 +1033,6 @@
     rows += '<td class="col-child-count platform-col platform-shopee">' + childCountHtml + '</td>';
     var tkSpending = isTikTokPlatform(s.platform) ? pickCurrentSpendingTkAdAccount(s) : null;
     rows += '<td class="col-ad-name platform-col platform-tiktok">' + buildTkAdNameCellHtml(s) + '</td>';
-    rows += '<td class="col-ad-account platform-col platform-tiktok">' + (isTikTokPlatform(s.platform) ? escapeHtml((tkSpending && tkAdAccountId(tkSpending)) || s.adAccountId || '—') : '—') + '</td>';
     rows += '<td class="col-bc-id platform-col platform-tiktok">' + (isTikTokPlatform(s.platform) ? escapeHtml(s.bcId || '—') : '—') + '</td>';
     rows += '<td class="col-bu">' + (s.bu || '—') + '</td>';
     rows += '<td class="col-status">' + storeStatusSwitchHtml({ checked: isStoreEnabled(s), id: s.id }) + '</td>';
