@@ -1031,7 +1031,6 @@
     rows += '<td class="col-shopee-ext platform-col platform-shopee">' + shopeeExt + '</td>';
     rows += '<td class="col-mall platform-col platform-mall">' + (supportsIsMallField(s.platform) ? (s.isMall ? '是' : '否') : '—') + '</td>';
     rows += '<td class="col-child-count platform-col platform-shopee">' + childCountHtml + '</td>';
-    var tkSpending = isTikTokPlatform(s.platform) ? pickCurrentSpendingTkAdAccount(s) : null;
     rows += '<td class="col-ad-name platform-col platform-tiktok">' + buildTkAdNameCellHtml(s) + '</td>';
     rows += '<td class="col-bc-id platform-col platform-tiktok">' + (isTikTokPlatform(s.platform) ? escapeHtml(s.bcId || '—') : '—') + '</td>';
     rows += '<td class="col-bu">' + (s.bu || '—') + '</td>';
