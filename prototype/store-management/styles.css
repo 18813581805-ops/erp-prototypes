@@ -169,6 +169,7 @@ th.col-alias{z-index:4;background:#fafafa!important}
 .col-type{width:110px}
 .col-platform-type{width:120px}
 .col-child-count{min-width:130px}
+.col-ad-name{min-width:150px}
 .col-ad-account{min-width:150px}
 .col-bc-id{min-width:130px}
 .col-bu{width:120px}
@@ -458,3 +459,17 @@ th.col-alias{z-index:4;background:#fafafa!important}
 @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 .toast.success{border-left:3px solid var(--success)}
 .toast.error{border-left:3px solid var(--danger)}
+
+/* TikTok 广告户名称 / 气泡 / 授权列表 */
+.tk-ad-name-trigger{color:var(--primary);cursor:pointer;border-bottom:1px dashed rgba(22,119,255,.45)}
+.tk-ad-name-trigger:hover{color:#0958d9}
+.tk-ad-popover{position:fixed;z-index:2100;min-width:360px;max-width:480px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.tk-ad-popover[hidden]{display:none!important}
+.tk-ad-popover-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px}
+.tk-ad-account-list .empty-hint{padding:12px;color:var(--subtle);font-size:13px;background:#fafafa;border:1px dashed var(--border-light);border-radius:6px}
+.tk-ad-mini-table{width:100%;border-collapse:collapse;font-size:12px}
+.tk-ad-mini-table th,.tk-ad-mini-table td{padding:8px 10px;border-bottom:1px solid var(--border-light);text-align:left;vertical-align:middle}
+.tk-ad-mini-table th{background:#fafafa;color:var(--muted);font-weight:600}
+.tk-ad-mini-table tr.is-current td{background:#f0f7ff}
+.tk-ad-current-tag{display:inline-block;margin-left:6px;padding:0 6px;height:18px;line-height:18px;border-radius:4px;background:#e6f4ff;color:#1677ff;font-size:11px}
+.ad-auth-meta{display:flex;align-items:center;gap:8px;font-size:13px}
