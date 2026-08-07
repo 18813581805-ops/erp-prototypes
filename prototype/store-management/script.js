@@ -245,6 +245,225 @@
     return platform === 'Temu';
   }
 
+  function isTikTokPlatform(platform) {
+    return platform === 'TikTok Shop';
+  }
+
+  var TK_AD_STATUS_LABELS = {
+    STATUS_ENABLE: '启用中',
+    STATUS_DISABLE: '废弃停用',
+    STATUS_CONFIRM_FAIL: '待签约',
+    STATUS_CONTRACT_PENDING: '确认失败'
+  };
+
+  function ensureTkAdAccounts(store) {
+    if (!store) return;
+    if (!Array.isArray(store.adAccounts)) store.adAccounts = [];
+    if ((!store.adAccounts.length) && store.adAccountId) {
+      store.adAccounts.push({
+        id: store.adAccountId,
+        name: store.adAccountName || store.adAccountId,
+        status: 'STATUS_ENABLE',
+        statusLabel: '启用中',
+        balance: 0,
+        is_del: 0,
+        ad_create_time: store.authTime && store.authTime !== '—' ? store.authTime : formatNow()
+      });
+    }
+  }
+
+  function tkAdAccountId(account) {
+    return account ? (account.id || account.adId || '') : '';
+  }
+
+  function tkAdStatusLabel(account) {
+    if (!account) return '—';
+    if (account.statusLabel) return account.statusLabel;
+    return TK_AD_STATUS_LABELS[account.status] || account.status || '—';
+  }
+
+  function isTkAdDeleted(account) {
+    return !!(account && (account.is_del === 1 || account.is_del === true || account.is_del === '1'));
+  }
+
+  /** 气泡/授权模块需过滤：废弃停用、待签约、确认失败 */
+  function isTkAdExcludedFromBubble(account) {
+    if (!account || isTkAdDeleted(account)) return true;
+    var status = account.status || '';
+    var label = account.statusLabel || TK_AD_STATUS_LABELS[status] || status;
+    if (status === 'STATUS_DISABLE' || label === '废弃停用') return true;
+    if (status === 'STATUS_CONFIRM_FAIL' || label === '待签约') return true;
+    if (status === 'STATUS_CONTRACT_PENDING' || label === '确认失败') return true;
+    return false;
+  }
+
+  function getTkAdAccountsNotDeleted(store) {
+    ensureTkAdAccounts(store);
+    return (store.adAccounts || []).filter(function(item) { return !isTkAdDeleted(item); });
+  }
+
+  function parseTkAdCreateTime(value) {
+    var ms = parseAuthExpireTime(value);
+    return isNaN(ms) ? 0 : ms;
+  }
+
+  /**
+   * 当前花费广告户：
+   * 1) is_del=0
+   * 2) 多条时取余额>0
+   * 3) 余额都为 0 时取 ad_create_time 最新
+   */
+  function pickCurrentSpendingTkAdAccount(store) {
+    var list = getTkAdAccountsNotDeleted(store);
+    if (!list.length) return null;
+    var withBalance = list.filter(function(item) { return Number(item.balance) > 0; });
+    var pool = withBalance.length ? withBalance : list;
+    return pool.slice().sort(function(a, b) {
+      if (withBalance.length) {
+        var balanceDiff = Number(b.balance) - Number(a.balance);
+        if (balanceDiff !== 0) return balanceDiff;
+      }
+      return parseTkAdCreateTime(b.ad_create_time) - parseTkAdCreateTime(a.ad_create_time);
+    })[0];
+  }
+
+  /** 气泡列表：过滤废弃/待签约/确认失败；列表当前广告户置顶 */
+  function getTkAdAccountsForBubble(store) {
+    var spending = pickCurrentSpendingTkAdAccount(store);
+    var spendingId = tkAdAccountId(spending);
+    var list = getTkAdAccountsNotDeleted(store).filter(function(item) {
+      return !isTkAdExcludedFromBubble(item);
+    });
+    if (!spendingId) return list;
+    var head = [];
+    var rest = [];
+    list.forEach(function(item) {
+      if (tkAdAccountId(item) === spendingId) head.push(item);
+      else rest.push(item);
+    });
+    if (!head.length && spending) head.push(spending);
+    return head.concat(rest);
+  }
+
+  function buildTkAdAccountListHtml(accounts, options) {
+    options = options || {};
+    if (!accounts || !accounts.length) {
+      return '<div class="empty-hint">暂无启用中的广告户</div>';
+    }
+    var spendingId = options.spendingId || '';
+    var rows = accounts.map(function(item, index) {
+      var isCurrent = spendingId && tkAdAccountId(item) === spendingId;
+      return '<tr class="' + (isCurrent || index === 0 ? 'is-current' : '') + '">' +
+        '<td>' + escapeHtml(item.name || '—') + (isCurrent || index === 0 ? '<span class="tk-ad-current-tag">当前</span>' : '') + '</td>' +
+        '<td>' + escapeHtml(tkAdAccountId(item) || '—') + '</td>' +
+        '<td>' + escapeHtml(tkAdStatusLabel(item)) + '</td>' +
+      '</tr>';
+    }).join('');
+    return '<table class="tk-ad-mini-table">' +
+      '<thead><tr><th>广告户名称</th><th>广告ID</th><th>广告户状态</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table>';
+  }
+
+  function renderTkAdAccountList(containerId, store) {
+    var el = $(containerId);
+    if (!el) return;
+    if (!store || !isTikTokPlatform(store.platform)) {
+      el.innerHTML = '<div class="empty-hint">—</div>';
+      return;
+    }
+    var spending = pickCurrentSpendingTkAdAccount(store);
+    var accounts = getTkAdAccountsForBubble(store);
+    el.innerHTML = buildTkAdAccountListHtml(accounts, { spendingId: tkAdAccountId(spending) });
+  }
+
+  function syncTkAdAccountAfterAuth(store) {
+    ensureTkAdAccounts(store);
+    var now = formatNow();
+    var newId = 'act_' + (74000000 + Math.floor(Math.random() * 999999));
+    var account = {
+      id: newId,
+      name: '新授权广告户-' + String(newId).slice(-4),
+      status: 'STATUS_ENABLE',
+      statusLabel: '启用中',
+      balance: 80 + Math.floor(Math.random() * 420),
+      is_del: 0,
+      ad_create_time: now
+    };
+    store.adAccounts.unshift(account);
+    store.adAccountId = account.id;
+    store.adAccountName = account.name;
+    store.adAuthStatus = '已授权';
+    return account;
+  }
+
+  function hideTkAdPopover() {
+    var pop = $('tkAdAccountPopover');
+    if (pop) pop.hidden = true;
+  }
+
+  function showTkAdPopover(anchor, store) {
+    var pop = $('tkAdAccountPopover');
+    var body = $('tkAdAccountPopoverBody');
+    if (!pop || !body || !anchor || !store) return;
+    var spending = pickCurrentSpendingTkAdAccount(store);
+    body.innerHTML = buildTkAdAccountListHtml(getTkAdAccountsForBubble(store), {
+      spendingId: tkAdAccountId(spending)
+    });
+    pop.hidden = false;
+    var rect = anchor.getBoundingClientRect();
+    var top = rect.bottom + 8;
+    var left = rect.left;
+    pop.style.top = top + 'px';
+    pop.style.left = left + 'px';
+    requestAnimationFrame(function() {
+      var box = pop.getBoundingClientRect();
+      if (box.right > window.innerWidth - 8) {
+        pop.style.left = Math.max(8, window.innerWidth - box.width - 8) + 'px';
+      }
+      if (box.bottom > window.innerHeight - 8) {
+        pop.style.top = Math.max(8, rect.top - box.height - 8) + 'px';
+      }
+    });
+  }
+
+  function bindTkAdPopover() {
+    var hideTimer = null;
+    document.addEventListener('mouseover', function(e) {
+      var cell = e.target.closest('.tk-ad-name-trigger');
+      if (!cell) return;
+      var storeId = Number(cell.dataset.id);
+      var store = window.STORE_DATA.find(function(item) { return item.id === storeId; });
+      if (!store) return;
+      if (hideTimer) {
+        clearTimeout(hideTimer);
+        hideTimer = null;
+      }
+      showTkAdPopover(cell, store);
+    });
+    document.addEventListener('mouseout', function(e) {
+      var cell = e.target.closest('.tk-ad-name-trigger');
+      var pop = $('tkAdAccountPopover');
+      if (!cell && !(pop && pop.contains(e.relatedTarget))) return;
+      if (pop && (pop.contains(e.relatedTarget) || (e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('.tk-ad-name-trigger')))) {
+        return;
+      }
+      hideTimer = setTimeout(hideTkAdPopover, 120);
+    });
+    var pop = $('tkAdAccountPopover');
+    if (pop) {
+      pop.addEventListener('mouseenter', function() {
+        if (hideTimer) {
+          clearTimeout(hideTimer);
+          hideTimer = null;
+        }
+      });
+      pop.addEventListener('mouseleave', function() {
+        hideTimer = setTimeout(hideTkAdPopover, 120);
+      });
+    }
+    window.addEventListener('scroll', hideTkAdPopover, true);
+  }
+
   function temuRegionDefs() {
     return [
       { key: 'us', label: '美区', suffix: '_US' },
@@ -504,6 +723,14 @@
     if (!store.permissions) store.permissions = ['订单查看'];
     if (!store.adAccountId) store.adAccountId = '';
     if (!store.bcId) store.bcId = '';
+    if (isTikTokPlatform(store.platform)) {
+      ensureTkAdAccounts(store);
+      var spending = pickCurrentSpendingTkAdAccount(store);
+      if (spending) {
+        store.adAccountId = tkAdAccountId(spending) || store.adAccountId;
+        store.adAccountName = spending.name || store.adAccountName || '';
+      }
+    }
     if (!store.registrationCompany) store.registrationCompany = store.body || '';
     if (!store.registrationCode) store.registrationCode = principalCode(store.registrationCompany);
     if (!store.registrationDate) store.registrationDate = principalEnterpriseRegistrationTime(store.registrationCompany);
@@ -727,6 +954,7 @@
       '<td class="col-shopee-ext platform-col platform-shopee temu-shared-cell">—</td>' +
       '<td class="col-mall platform-col platform-mall temu-shared-cell">—</td>' +
       '<td class="col-child-count platform-col platform-shopee temu-shared-cell">—</td>' +
+      '<td class="col-ad-name platform-col platform-tiktok temu-shared-cell">—</td>' +
       '<td class="col-ad-account platform-col platform-tiktok temu-shared-cell">—</td>' +
       '<td class="col-bc-id platform-col platform-tiktok temu-shared-cell">—</td>' +
       '<td class="col-bu temu-shared-cell">' + escapeHtml(bu) + '</td>' +
@@ -743,6 +971,15 @@
         '<button class="table-action-more" data-op="更多" data-id="' + primary.id + '" type="button">更多 ▾</button>' +
       '</div></td>' +
     '</tr>';
+  }
+
+  function buildTkAdNameCellHtml(store) {
+    if (!isTikTokPlatform(store.platform)) return '—';
+    ensureTkAdAccounts(store);
+    var spending = pickCurrentSpendingTkAdAccount(store);
+    var name = spending ? (spending.name || '—') : '—';
+    if (name === '—') return '—';
+    return '<span class="tk-ad-name-trigger" data-id="' + store.id + '" tabindex="0">' + escapeHtml(name) + '</span>';
   }
 
   function buildStoreRowHtml(s, options) {
@@ -795,8 +1032,10 @@
     rows += '<td class="col-shopee-ext platform-col platform-shopee">' + shopeeExt + '</td>';
     rows += '<td class="col-mall platform-col platform-mall">' + (supportsIsMallField(s.platform) ? (s.isMall ? '是' : '否') : '—') + '</td>';
     rows += '<td class="col-child-count platform-col platform-shopee">' + childCountHtml + '</td>';
-    rows += '<td class="col-ad-account platform-col platform-tiktok">' + (s.platform === 'TikTok Shop' ? (s.adAccountId || '—') : '—') + '</td>';
-    rows += '<td class="col-bc-id platform-col platform-tiktok">' + (s.platform === 'TikTok Shop' ? (s.bcId || '—') : '—') + '</td>';
+    var tkSpending = isTikTokPlatform(s.platform) ? pickCurrentSpendingTkAdAccount(s) : null;
+    rows += '<td class="col-ad-name platform-col platform-tiktok">' + buildTkAdNameCellHtml(s) + '</td>';
+    rows += '<td class="col-ad-account platform-col platform-tiktok">' + (isTikTokPlatform(s.platform) ? escapeHtml((tkSpending && tkAdAccountId(tkSpending)) || s.adAccountId || '—') : '—') + '</td>';
+    rows += '<td class="col-bc-id platform-col platform-tiktok">' + (isTikTokPlatform(s.platform) ? escapeHtml(s.bcId || '—') : '—') + '</td>';
     rows += '<td class="col-bu">' + (s.bu || '—') + '</td>';
     rows += '<td class="col-status">' + storeStatusSwitchHtml({ checked: isStoreEnabled(s), id: s.id }) + '</td>';
     rows += '<td class="col-auth">' + authSummaryHtml(s) + '</td>';
@@ -1129,8 +1368,10 @@
     } else if (authType === 'ad') {
       store.adAuthStatus = '已授权';
       if (platform === 'TikTok Shop') {
+        currentStore = store;
+        var synced = syncTkAdAccountAfterAuth(store);
         renderTable();
-        toast(platform + ' 广告授权成功');
+        toast(platform + ' 广告授权成功，已同步广告户「' + (synced.name || synced.id) + '」');
         openAdSyncModal();
         return;
       }
@@ -1609,6 +1850,12 @@
     document.querySelectorAll('.platform-edit-temu').forEach(function(el) {
       el.hidden = platform !== 'Temu';
     });
+    var editTiktokAdSection = $('editTiktokAdAuthSection');
+    if (editTiktokAdSection) {
+      var showAdList = isTikTokPlatform(platform) && !creatingBasicStore && currentStore;
+      editTiktokAdSection.hidden = !showAdList;
+      if (showAdList) renderTkAdAccountList('editTiktokAdAuthList', currentStore);
+    }
     syncStoreTypeOptions(platform, creatingBasicStore ? value('editStoreType') : (currentStore ? currentStore.storeType : ''));
     syncIsMallField(platform, creatingBasicStore ? (value('editIsMall') || '') : (currentStore ? currentStore.isMall : ''));
     syncSiteFieldVisibility(platform);
@@ -1974,11 +2221,23 @@
     var isTemu = isTemuPlatform(store.platform);
     var isOzon = isOzonPlatform(store.platform);
     var isJd = isJdPlatform(store.platform);
+    var isTikTok = isTikTokPlatform(store.platform);
     $('temuAuthCard').hidden = !isTemu;
     $('alibabaAuthCard').hidden = true;
     $('jdAuthCard').hidden = !isJd;
     $('genericAuthCard').hidden = isOzon || isTemu || isJd;
     $('ozonAuthCard').hidden = !isOzon;
+    var tiktokAdCard = $('tiktokAdAuthCard');
+    if (tiktokAdCard) tiktokAdCard.hidden = !isTikTok;
+    if (isTikTok) {
+      var adAuthInfo = tagForAuth(store.adAuthStatus || '未授权');
+      var adStatusEl = $('tiktokAdAuthStatus');
+      if (adStatusEl) {
+        adStatusEl.textContent = adAuthInfo.text;
+        adStatusEl.className = 'tag ' + adAuthInfo.tag;
+      }
+      renderTkAdAccountList('tiktokAdAuthList', store);
+    }
     if (isTemu) {
       authOrderTokenRegion = 'us';
       temuTokenKind = 'product';
@@ -2632,6 +2891,11 @@
     $('editSiteSelect').value = creatingBasicStore ? '' : (supportsSiteField(store.platform) ? (store.site || '') : '');
     document.querySelectorAll('.platform-edit-tiktok').forEach(function(el){ el.hidden = store.platform !== 'TikTok Shop'; });
     document.querySelectorAll('.platform-edit-shopee').forEach(function(el){ el.hidden = store.platform !== 'Shopee'; });
+    var editTiktokAdSection = $('editTiktokAdAuthSection');
+    if (editTiktokAdSection) {
+      editTiktokAdSection.hidden = !isTikTokPlatform(store.platform) || creatingBasicStore;
+      if (!editTiktokAdSection.hidden) renderTkAdAccountList('editTiktokAdAuthList', store);
+    }
     setBrowserEnumValue(store.browserName || '');
     $('editBrowserStore').value = store.browserStoreName || '';
     $('editAccountType').value = ['自注册', '购买'].indexOf(store.accountType) >= 0 ? store.accountType : '';
@@ -2679,7 +2943,7 @@
         toast('请选择店铺类型', 'error');
         return;
       }
-      if (platform === 'Shopee' && !value('editIsMall')) {
+      if (supportsIsMallField(platform) && !value('editIsMall')) {
         toast('请选择是否mall店', 'error');
         return;
       }
@@ -2723,7 +2987,7 @@
       currentStore.platformShopId = value('editShopId');
       currentStore.platformShopName = value('editShopName');
       currentStore.storeType = hidesStoreType(platform) ? '' : value('editStoreType');
-      currentStore.isMall = platform === 'Shopee' ? (value('editIsMall') === '是') : false;
+      currentStore.isMall = supportsIsMallField(platform) ? (value('editIsMall') === '是') : false;
       currentStore.browserName = value('editBrowserName');
       currentStore.browserStoreName = value('editBrowserStore');
       currentStore.accountType = value('editAccountType');
@@ -3323,6 +3587,7 @@
     bindEditBasic();
     bindEditBiz();
     bindAdSync();
+    bindTkAdPopover();
     bindPostAuthPermission();
     bindDrawerBlankClose();
     bindPrincipalSelector('inputRegistrationSubject', 'inputRegistrationCode', 'inputEnterpriseRegistrationTime');
