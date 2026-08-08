@@ -403,41 +403,40 @@
   /** 模拟 OAuth 回调后：后端 3 级清洗并返回待确认广告户 */
   function buildTkAdAuthCallbackCandidates(store) {
     ensureTkAdAccounts(store);
-    var now = formatNow();
-    var existingPrimary = (store.adAccounts || []).find(function(item) {
+    var primaryId = '7642613372432859144';
+    var secondaryId = '7123456789012345678';
+    var existsPrimary = (store.adAccounts || []).some(function(item) { return tkAdAccountId(item) === primaryId; });
+    var existsSecondary = (store.adAccounts || []).some(function(item) { return tkAdAccountId(item) === secondaryId; });
+    // 同时兼容示例店原有广告户，演示「已有记录刷新授权时间、不重复新增」
+    var legacyPrimary = (store.adAccounts || []).find(function(item) {
       return tkAdAccountId(item) === 'act_73910288' || item.name === '印尼主力广告户';
     });
-    var existingSecondary = (store.adAccounts || []).find(function(item) {
-      return tkAdAccountId(item) === 'act_74000112';
-    });
-    var primaryId = existingPrimary ? tkAdAccountId(existingPrimary) : '7642613372432859144';
-    var primaryName = existingPrimary ? (existingPrimary.name || '印尼主力广告户') : 'TIKShop-美区主户';
-    var secondaryId = existingSecondary ? tkAdAccountId(existingSecondary) : '7123456789012345678';
-    var secondaryName = existingSecondary ? (existingSecondary.name || '内容投放广告户') : 'TIKShop-美区备用户';
+    if (legacyPrimary && !existsPrimary) {
+      primaryId = tkAdAccountId(legacyPrimary);
+      existsPrimary = true;
+    }
     return [
       {
         id: primaryId,
-        name: primaryName,
+        name: 'TIKShop-美区主户',
         balance: 250,
-        ad_create_time: (existingPrimary && existingPrimary.ad_create_time) || '2026-03-12 09:20',
+        ad_create_time: '2026-03-12 09:20',
         status: 'STATUS_ENABLE',
         statusLabel: '启用中',
         is_del: 0,
         matchRule: '余额 > 0 ($250.00)',
-        credentialStatus: '即将覆盖更新',
-        existsInSystem: !!existingPrimary
+        existsInSystem: existsPrimary
       },
       {
         id: secondaryId,
-        name: secondaryName,
+        name: 'TIKShop-美区备用户',
         balance: 0,
-        ad_create_time: now,
+        ad_create_time: '2026-08-01 10:00',
         status: 'STATUS_ENABLE',
         statusLabel: '启用中',
         is_del: 0,
-        matchRule: '最新创建 (' + now.slice(0, 10) + ')',
-        credentialStatus: '即将覆盖更新',
-        existsInSystem: !!existingSecondary
+        matchRule: '最新创建 (2026-08-01)',
+        existsInSystem: existsSecondary
       }
     ];
   }
@@ -449,10 +448,8 @@
     var ready = checked.length > 0;
     if (btn) btn.disabled = !ready;
     if (hint) {
-      hint.textContent = ready
-        ? '已选 ' + checked.length + ' 个广告户，确认后将覆盖更新凭证并绑定到当前店铺'
-        : '请至少勾选 1 个广告户后，才可确认并应用';
-      hint.classList.toggle('is-ready', ready);
+      hint.hidden = ready;
+      hint.textContent = '请至少勾选 1 个广告户后，才可确认并应用';
     }
   }
 
@@ -465,12 +462,8 @@
         '<input type="checkbox" checked value="' + escapeHtml(id) + '" data-index="' + index + '" />' +
         '<div class="tk-ad-credential-item-body">' +
           '<div class="tk-ad-credential-item-title">' + escapeHtml(item.name || '—') +
-            ' <span style="font-weight:400;color:var(--muted);">(ID: ' + escapeHtml(id) + ')</span></div>' +
-          '<div class="tk-ad-credential-item-meta">' +
-            '匹配规则：<span class="rule">[' + escapeHtml(item.matchRule || '—') + ']</span>' +
-            ' | 凭证状态：<span class="cred">[' + escapeHtml(item.credentialStatus || '即将覆盖更新') + ']</span>' +
-            (item.existsInSystem ? ' <span style="color:var(--subtle);">· 系统已有记录，将刷新授权时间</span>' : ' <span style="color:var(--subtle);">· 新广告户，将新增绑定</span>') +
-          '</div>' +
+            ' <span class="tk-ad-credential-id">(广告ID: ' + escapeHtml(id) + ')</span></div>' +
+          '<div class="tk-ad-credential-item-meta">[' + escapeHtml(item.matchRule || '—') + ']</div>' +
         '</div>' +
       '</label>';
     }).join('');
