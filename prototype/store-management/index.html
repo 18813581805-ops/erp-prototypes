@@ -1,14 +1,14 @@
 ﻿<!doctype html>
 <html lang="zh-CN">
 <head>
-  <!-- build:202608081048 -->
+  <!-- build:202608081058 -->
 <meta name="build-commit" content="ozon-ui-202608041520">
 <meta name="build-time" content="2026-08-04T15:20:00+08:00">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>店铺管理 · 跨境电商 ERP</title>
   <link rel="stylesheet" href="../../ui-library/tokens.css" />
-  <link rel="stylesheet" href="styles.css?v=202608081048" />
+  <link rel="stylesheet" href="styles.css?v=202608081058" />
 </head>
 <body>
 <div class="erp-shell">
@@ -745,12 +745,11 @@
 <div class="modal-overlay" id="modalTkAdCredential" hidden>
   <div class="modal tk-ad-credential-modal">
     <div class="modal-header">
-      <h3>🔑 广告授权凭证更新完成</h3>
+      <h3>🔑 绑定店铺广告户</h3>
     </div>
     <div class="modal-body">
-      <p class="tk-ad-credential-lead">系统已自动清洗并提取真正在用的广告账号：</p>
       <div class="tk-ad-credential-list" id="tkAdCredentialList"></div>
-      <p class="tk-ad-credential-hint" id="tkAdCredentialHint">请至少勾选 1 个广告户后，才可确认并应用</p>
+      <p class="tk-ad-credential-hint" id="tkAdCredentialHint" hidden>请至少勾选 1 个广告户后，才可确认并应用</p>
     </div>
     <div class="modal-footer">
       <button class="btn primary" id="btnConfirmTkAdCredential" type="button" disabled>确认并应用</button>
@@ -881,7 +880,7 @@
   <div id="tkAdAccountPopoverBody" class="tk-ad-account-list"></div>
 </div>
 
-<script src="data.js?v=202608081048"></script>
-<script src="script.js?v=202608081048"></script>
+<script src="data.js?v=202608081058"></script>
+<script src="script.js?v=202608081058"></script>
 </body>
 </html>
