@@ -492,18 +492,15 @@ th.col-alias{z-index:4;background:#fafafa!important}
 .tk-ad-popover .tk-ad-mini-table td{padding:7px 12px;white-space:nowrap;word-break:normal}
 
 /* TikTok 广告授权凭证确认弹窗 */
-.tk-ad-credential-modal{width:560px;max-width:calc(100vw - 32px)}
-.tk-ad-credential-lead{margin:0 0 14px;font-size:13px;color:var(--text);line-height:1.6}
-.tk-ad-credential-list{display:flex;flex-direction:column;gap:10px}
-.tk-ad-credential-item{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--border-light);border-radius:8px;background:#fafafa;cursor:pointer}
-.tk-ad-credential-item:hover{border-color:#91caff;background:#f0f7ff}
-.tk-ad-credential-item.is-checked{border-color:#1677ff;background:#e6f4ff}
+.tk-ad-credential-modal{width:520px;max-width:calc(100vw - 32px)}
+.tk-ad-credential-list{display:flex;flex-direction:column;gap:12px}
+.tk-ad-credential-item{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--border-light);border-radius:8px;background:#fff;cursor:pointer}
+.tk-ad-credential-item:hover{border-color:#91caff;background:#fafafa}
+.tk-ad-credential-item.is-checked{border-color:#1677ff;background:#f0f7ff}
 .tk-ad-credential-item input{margin-top:3px;flex:none}
 .tk-ad-credential-item-body{min-width:0;flex:1}
 .tk-ad-credential-item-title{font-size:13px;font-weight:600;color:var(--text);line-height:1.5}
-.tk-ad-credential-item-meta{margin-top:4px;font-size:12px;color:var(--muted);line-height:1.6}
-.tk-ad-credential-item-meta .rule{color:#0958d9}
-.tk-ad-credential-item-meta .cred{color:#d48806}
+.tk-ad-credential-id{font-weight:400;color:var(--muted)}
+.tk-ad-credential-item-meta{margin-top:6px;padding-left:0;font-size:12px;color:#0958d9;line-height:1.5}
 .tk-ad-credential-hint{margin:12px 0 0;font-size:12px;color:var(--danger)}
-.tk-ad-credential-hint.is-ready{color:var(--success)}
 #btnConfirmTkAdCredential:disabled{opacity:.45;cursor:not-allowed}
