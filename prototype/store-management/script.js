@@ -407,24 +407,16 @@
     var secondaryId = '7123456789012345678';
     var existsPrimary = (store.adAccounts || []).some(function(item) { return tkAdAccountId(item) === primaryId; });
     var existsSecondary = (store.adAccounts || []).some(function(item) { return tkAdAccountId(item) === secondaryId; });
-    // 同时兼容示例店原有广告户，演示「已有记录刷新授权时间、不重复新增」
-    var legacyPrimary = (store.adAccounts || []).find(function(item) {
-      return tkAdAccountId(item) === 'act_73910288' || item.name === '印尼主力广告户';
-    });
-    if (legacyPrimary && !existsPrimary) {
-      primaryId = tkAdAccountId(legacyPrimary);
-      existsPrimary = true;
-    }
     return [
       {
         id: primaryId,
         name: 'TIKShop-美区主户',
         balance: 250,
-        ad_create_time: '2026-03-12 09:20',
+        ad_create_time: '2026-08-01 10:00',
         status: 'STATUS_ENABLE',
         statusLabel: '启用中',
         is_del: 0,
-        matchRule: '余额 > 0 ($250.00)',
+        matchRule: '余额 ：$250.00',
         existsInSystem: existsPrimary
       },
       {
@@ -435,7 +427,7 @@
         status: 'STATUS_ENABLE',
         statusLabel: '启用中',
         is_del: 0,
-        matchRule: '最新创建 (2026-08-01)',
+        matchRule: '最新创建时间：2026-08-01',
         existsInSystem: existsSecondary
       }
     ];
@@ -443,14 +435,17 @@
 
   function syncTkAdCredentialConfirmButton() {
     var checked = document.querySelectorAll('#tkAdCredentialList input[type="checkbox"]:checked');
+    var count = checked.length;
     var btn = $('btnConfirmTkAdCredential');
     var hint = $('tkAdCredentialHint');
-    var ready = checked.length > 0;
+    var status = $('tkAdCredentialStatus');
+    var ready = count > 0;
     if (btn) btn.disabled = !ready;
-    if (hint) {
-      hint.hidden = ready;
-      hint.textContent = '请至少勾选 1 个广告户后，才可确认并应用';
+    if (status) {
+      status.textContent = '已选 ' + count + ' 个广告户，确认后将绑定到当前店铺';
+      status.classList.toggle('is-empty', !ready);
     }
+    if (hint) hint.hidden = ready;
   }
 
   function renderTkAdCredentialCandidates(candidates) {
