@@ -308,13 +308,27 @@
   }
 
   /**
-   * 当前花费广告户：
+   * 当前店铺绑定的广告户：
    * 1) is_del=0
-   * 2) 多条时取余额>0
-   * 3) 余额都为 0 时取 ad_create_time 最新
+   * 2) 多条时取余额>0（排除闲置余额为 0）
+   * 3) 余额均无时取 ad_create_time 最新
    */
   function pickCurrentSpendingTkAdAccount(store) {
     var list = getTkAdAccountsNotDeleted(store);
+    if (!list.length) return null;
+    var withBalance = list.filter(function(item) { return Number(item.balance) > 0; });
+    var pool = withBalance.length ? withBalance : list;
+    return pool.slice().sort(function(a, b) {
+      if (withBalance.length) {
+        var balanceDiff = Number(b.balance) - Number(a.balance);
+        if (balanceDiff !== 0) return balanceDiff;
+      }
+      return parseTkAdCreateTime(b.ad_create_time) - parseTkAdCreateTime(a.ad_create_time);
+    })[0];
+  }
+
+  function pickBoundTkAdFromAccounts(accounts) {
+    var list = (accounts || []).filter(function(item) { return !isTkAdDeleted(item); });
     if (!list.length) return null;
     var withBalance = list.filter(function(item) { return Number(item.balance) > 0; });
     var pool = withBalance.length ? withBalance : list;
@@ -351,16 +365,20 @@
       return '<div class="empty-hint">暂无启用中的广告户</div>';
     }
     var spendingId = options.spendingId || '';
+    var showLastAuth = !!options.showLastAuth;
+    var head = '<th>广告户名称</th><th>广告ID</th><th>广告户状态</th>' +
+      (showLastAuth ? '<th>最后授权时间</th>' : '');
     var rows = accounts.map(function(item, index) {
       var isCurrent = spendingId && tkAdAccountId(item) === spendingId;
       return '<tr class="' + (isCurrent || index === 0 ? 'is-current' : '') + '">' +
         '<td>' + escapeHtml(item.name || '—') + (isCurrent || index === 0 ? '<span class="tk-ad-current-tag">当前</span>' : '') + '</td>' +
         '<td>' + escapeHtml(tkAdAccountId(item) || '—') + '</td>' +
         '<td>' + escapeHtml(tkAdStatusLabel(item)) + '</td>' +
+        (showLastAuth ? '<td>' + escapeHtml(item.lastAuthTime || '—') + '</td>' : '') +
       '</tr>';
     }).join('');
     return '<table class="tk-ad-mini-table">' +
-      '<thead><tr><th>广告户名称</th><th>广告ID</th><th>广告户状态</th></tr></thead>' +
+      '<thead><tr>' + head + '</tr></thead>' +
       '<tbody>' + rows + '</tbody></table>';
   }
 
@@ -373,27 +391,222 @@
     }
     var spending = pickCurrentSpendingTkAdAccount(store);
     var accounts = getTkAdAccountsForBubble(store);
-    el.innerHTML = buildTkAdAccountListHtml(accounts, { spendingId: tkAdAccountId(spending) });
+    el.innerHTML = buildTkAdAccountListHtml(accounts, {
+      spendingId: tkAdAccountId(spending),
+      showLastAuth: true
+    });
   }
 
-  function syncTkAdAccountAfterAuth(store) {
+  var pendingTkAdCredentialStore = null;
+  var pendingTkAdCandidates = [];
+
+  /** 模拟 OAuth 回调后：后端 3 级清洗并返回待确认广告户 */
+  function buildTkAdAuthCallbackCandidates(store) {
     ensureTkAdAccounts(store);
     var now = formatNow();
-    var newId = 'act_' + (74000000 + Math.floor(Math.random() * 999999));
-    var account = {
-      id: newId,
-      name: '新授权广告户-' + String(newId).slice(-4),
-      status: 'STATUS_ENABLE',
-      statusLabel: '启用中',
-      balance: 80 + Math.floor(Math.random() * 420),
-      is_del: 0,
-      ad_create_time: now
-    };
-    store.adAccounts.unshift(account);
-    store.adAccountId = account.id;
-    store.adAccountName = account.name;
+    var existingPrimary = (store.adAccounts || []).find(function(item) {
+      return tkAdAccountId(item) === 'act_73910288' || item.name === '印尼主力广告户';
+    });
+    var existingSecondary = (store.adAccounts || []).find(function(item) {
+      return tkAdAccountId(item) === 'act_74000112';
+    });
+    var primaryId = existingPrimary ? tkAdAccountId(existingPrimary) : '7642613372432859144';
+    var primaryName = existingPrimary ? (existingPrimary.name || '印尼主力广告户') : 'TIKShop-美区主户';
+    var secondaryId = existingSecondary ? tkAdAccountId(existingSecondary) : '7123456789012345678';
+    var secondaryName = existingSecondary ? (existingSecondary.name || '内容投放广告户') : 'TIKShop-美区备用户';
+    return [
+      {
+        id: primaryId,
+        name: primaryName,
+        balance: 250,
+        ad_create_time: (existingPrimary && existingPrimary.ad_create_time) || '2026-03-12 09:20',
+        status: 'STATUS_ENABLE',
+        statusLabel: '启用中',
+        is_del: 0,
+        matchRule: '余额 > 0 ($250.00)',
+        credentialStatus: '即将覆盖更新',
+        existsInSystem: !!existingPrimary
+      },
+      {
+        id: secondaryId,
+        name: secondaryName,
+        balance: 0,
+        ad_create_time: now,
+        status: 'STATUS_ENABLE',
+        statusLabel: '启用中',
+        is_del: 0,
+        matchRule: '最新创建 (' + now.slice(0, 10) + ')',
+        credentialStatus: '即将覆盖更新',
+        existsInSystem: !!existingSecondary
+      }
+    ];
+  }
+
+  function syncTkAdCredentialConfirmButton() {
+    var checked = document.querySelectorAll('#tkAdCredentialList input[type="checkbox"]:checked');
+    var btn = $('btnConfirmTkAdCredential');
+    var hint = $('tkAdCredentialHint');
+    var ready = checked.length > 0;
+    if (btn) btn.disabled = !ready;
+    if (hint) {
+      hint.textContent = ready
+        ? '已选 ' + checked.length + ' 个广告户，确认后将覆盖更新凭证并绑定到当前店铺'
+        : '请至少勾选 1 个广告户后，才可确认并应用';
+      hint.classList.toggle('is-ready', ready);
+    }
+  }
+
+  function renderTkAdCredentialCandidates(candidates) {
+    var list = $('tkAdCredentialList');
+    if (!list) return;
+    list.innerHTML = (candidates || []).map(function(item, index) {
+      var id = tkAdAccountId(item);
+      return '<label class="tk-ad-credential-item is-checked" data-id="' + escapeHtml(id) + '">' +
+        '<input type="checkbox" checked value="' + escapeHtml(id) + '" data-index="' + index + '" />' +
+        '<div class="tk-ad-credential-item-body">' +
+          '<div class="tk-ad-credential-item-title">' + escapeHtml(item.name || '—') +
+            ' <span style="font-weight:400;color:var(--muted);">(ID: ' + escapeHtml(id) + ')</span></div>' +
+          '<div class="tk-ad-credential-item-meta">' +
+            '匹配规则：<span class="rule">[' + escapeHtml(item.matchRule || '—') + ']</span>' +
+            ' | 凭证状态：<span class="cred">[' + escapeHtml(item.credentialStatus || '即将覆盖更新') + ']</span>' +
+            (item.existsInSystem ? ' <span style="color:var(--subtle);">· 系统已有记录，将刷新授权时间</span>' : ' <span style="color:var(--subtle);">· 新广告户，将新增绑定</span>') +
+          '</div>' +
+        '</div>' +
+      '</label>';
+    }).join('');
+    syncTkAdCredentialConfirmButton();
+  }
+
+  function openTkAdCredentialModal(store) {
+    pendingTkAdCredentialStore = store;
+    pendingTkAdCandidates = buildTkAdAuthCallbackCandidates(store);
+    renderTkAdCredentialCandidates(pendingTkAdCandidates);
+    $('modalTkAdCredential').hidden = false;
+  }
+
+  function closeTkAdCredentialModal() {
+    $('modalTkAdCredential').hidden = true;
+    pendingTkAdCredentialStore = null;
+    pendingTkAdCandidates = [];
+  }
+
+  function applyTkAdCredentialSelection(store, selectedIds) {
+    ensureTkAdAccounts(store);
+    var now = formatNow();
+    var applied = [];
+    selectedIds.forEach(function(id) {
+      var candidate = pendingTkAdCandidates.find(function(item) { return tkAdAccountId(item) === id; });
+      if (!candidate) return;
+      var existing = store.adAccounts.find(function(item) { return tkAdAccountId(item) === id; });
+      if (existing) {
+        existing.name = candidate.name || existing.name;
+        existing.balance = candidate.balance;
+        existing.ad_create_time = candidate.ad_create_time || existing.ad_create_time;
+        existing.status = candidate.status || existing.status || 'STATUS_ENABLE';
+        existing.statusLabel = candidate.statusLabel || existing.statusLabel || '启用中';
+        existing.is_del = 0;
+        existing.lastAuthTime = now;
+        applied.push(existing);
+      } else {
+        var created = {
+          id: id,
+          name: candidate.name,
+          balance: candidate.balance,
+          ad_create_time: candidate.ad_create_time || now,
+          status: 'STATUS_ENABLE',
+          statusLabel: '启用中',
+          is_del: 0,
+          lastAuthTime: now
+        };
+        store.adAccounts.unshift(created);
+        applied.push(created);
+      }
+    });
+    var bound = pickBoundTkAdFromAccounts(applied) || pickCurrentSpendingTkAdAccount(store);
+    if (bound) {
+      store.adAccountId = tkAdAccountId(bound);
+      store.adAccountName = bound.name || '';
+    }
     store.adAuthStatus = '已授权';
-    return account;
+    return { applied: applied, bound: bound };
+  }
+
+  function refreshTkAdAuthViews(store) {
+    if (!store) return;
+    renderTable();
+    if (currentStore && currentStore.id === store.id) {
+      if (!$('drawerDetail').hidden) {
+        var adAuthInfo = tagForAuth(store.adAuthStatus || '未授权');
+        var adStatusEl = $('tiktokAdAuthStatus');
+        if (adStatusEl) {
+          adStatusEl.textContent = adAuthInfo.text;
+          adStatusEl.className = 'tag ' + adAuthInfo.tag;
+        }
+        if ($('tiktokAdAuthCard') && !$('tiktokAdAuthCard').hidden) {
+          renderTkAdAccountList('tiktokAdAuthList', store);
+        }
+        if ($('basicAdAccountId')) {
+          $('basicAdAccountId').textContent = store.adAccountId || '—';
+        }
+      }
+      if ($('drawerEditBasic') && !$('drawerEditBasic').hidden) {
+        $('editAdAccountId').value = store.adAccountId || '';
+        var editSection = $('editTiktokAdAuthSection');
+        if (editSection && !editSection.hidden) {
+          renderTkAdAccountList('editTiktokAdAuthList', store);
+        }
+      }
+    }
+  }
+
+  function bindTkAdCredentialModal() {
+    var list = $('tkAdCredentialList');
+    if (list) {
+      list.addEventListener('change', function(e) {
+        if (!e.target || e.target.type !== 'checkbox') return;
+        var item = e.target.closest('.tk-ad-credential-item');
+        if (item) item.classList.toggle('is-checked', e.target.checked);
+        syncTkAdCredentialConfirmButton();
+      });
+      list.addEventListener('click', function(e) {
+        var item = e.target.closest('.tk-ad-credential-item');
+        if (!item || e.target.type === 'checkbox') return;
+        var input = item.querySelector('input[type="checkbox"]');
+        if (!input) return;
+        input.checked = !input.checked;
+        item.classList.toggle('is-checked', input.checked);
+        syncTkAdCredentialConfirmButton();
+      });
+    }
+    var btn = $('btnConfirmTkAdCredential');
+    if (btn) {
+      btn.addEventListener('click', function() {
+        var store = pendingTkAdCredentialStore;
+        if (!store) return;
+        var selected = Array.prototype.map.call(
+          document.querySelectorAll('#tkAdCredentialList input[type="checkbox"]:checked'),
+          function(el) { return el.value; }
+        );
+        if (!selected.length) {
+          toast('请至少勾选 1 个广告户', 'error');
+          return;
+        }
+        var result = applyTkAdCredentialSelection(store, selected);
+        closeTkAdCredentialModal();
+        currentStore = store;
+        refreshTkAdAuthViews(store);
+        var boundName = result.bound ? (result.bound.name || result.bound.id) : '';
+        toast('凭证已成功覆盖更新，绑定状态正常！' + (boundName ? ' 当前绑定：' + boundName : ''));
+      });
+    }
+    var overlay = $('modalTkAdCredential');
+    if (overlay) {
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+          toast('请勾选广告户并点击「确认并应用」后关闭', 'error');
+        }
+      });
+    }
   }
 
   function hideTkAdPopover() {
@@ -1366,10 +1579,8 @@
       store.adAuthStatus = '已授权';
       if (platform === 'TikTok Shop') {
         currentStore = store;
-        var synced = syncTkAdAccountAfterAuth(store);
-        renderTable();
-        toast(platform + ' 广告授权成功，已同步广告户「' + (synced.name || synced.id) + '」');
-        openAdSyncModal();
+        // 静默跳转后模拟回调：弹出清洗结果确认面板（强制勾选后才能应用）
+        openTkAdCredentialModal(store);
         return;
       }
     } else if (authType === 'affiliate') {
@@ -3584,6 +3795,7 @@
     bindEditBasic();
     bindEditBiz();
     bindAdSync();
+    bindTkAdCredentialModal();
     bindTkAdPopover();
     bindPostAuthPermission();
     bindDrawerBlankClose();
