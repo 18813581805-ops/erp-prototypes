@@ -550,7 +550,7 @@
       if (tkAdAccountId(account) !== boundId) pushUnique(account);
     });
     unselectedAccounts.forEach(pushUnique);
-    (store.adAccounts || []).forEach(pushUnique);
+    // 仅保留确认面板内的广告户，不回填历史无关广告户
     store.adAccounts = ordered;
 
     return { applied: selectedAccounts, unselected: unselectedAccounts, bound: bound };
