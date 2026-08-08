@@ -398,72 +398,30 @@ window.STORE_DATA = [
     dept: '东南亚事业部',
     owner: '李四',
     storeEmail: 'tiktok-id@yiyihe.com',
-    adAccountId: 'act_73910288',
+    adAccountId: '7642613372432859144',
+    adAccountName: 'TIKShop-美区主户',
     bcId: 'bc_448201',
     isMall: true,
     adAccounts: [
       {
-        id: 'act_73910288',
-        name: '印尼主力广告户',
+        id: '7642613372432859144',
+        name: 'TIKShop-美区主户',
         status: 'STATUS_ENABLE',
         statusLabel: '启用中',
-        balance: 1280.5,
+        balance: 250,
         is_del: 0,
-        ad_create_time: '2026-03-12 09:20'
+        ad_create_time: '2026-03-12 09:20',
+        lastAuthTime: '2026-08-05 10:00'
       },
       {
-        id: 'act_74000112',
-        name: '内容投放广告户',
-        status: 'STATUS_ENABLE',
-        statusLabel: '启用中',
-        balance: 0,
-        is_del: 0,
-        ad_create_time: '2026-05-01 14:10'
-      },
-      {
-        id: 'act_73880001',
-        name: '历史零余额户',
+        id: '7123456789012345678',
+        name: 'TIKShop-美区备用户',
         status: 'STATUS_ENABLE',
         statusLabel: '启用中',
         balance: 0,
         is_del: 0,
-        ad_create_time: '2026-01-08 11:00'
-      },
-      {
-        id: 'act_73770099',
-        name: '待签约广告户',
-        status: 'STATUS_CONFIRM_FAIL',
-        statusLabel: '待签约',
-        balance: 50,
-        is_del: 0,
-        ad_create_time: '2026-04-20 16:00'
-      },
-      {
-        id: 'act_73660088',
-        name: '确认失败广告户',
-        status: 'STATUS_CONTRACT_PENDING',
-        statusLabel: '确认失败',
-        balance: 20,
-        is_del: 0,
-        ad_create_time: '2026-04-22 10:30'
-      },
-      {
-        id: 'act_73550077',
-        name: '已废弃广告户',
-        status: 'STATUS_DISABLE',
-        statusLabel: '废弃停用',
-        balance: 0,
-        is_del: 0,
-        ad_create_time: '2025-11-01 08:00'
-      },
-      {
-        id: 'act_73440066',
-        name: '已删除广告户',
-        status: 'STATUS_ENABLE',
-        statusLabel: '启用中',
-        balance: 999,
-        is_del: 1,
-        ad_create_time: '2026-02-01 12:00'
+        ad_create_time: '2026-08-01 10:00',
+        lastAuthTime: '2026-08-05 10:00'
       }
     ],
     browserName: '紫鸟',
