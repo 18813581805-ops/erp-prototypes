@@ -309,13 +309,15 @@
 
   /**
    * 当前店铺绑定的广告户：
-   * 1) is_del=0
-   * 2) 多条时取余额>0（排除闲置余额为 0）
-   * 3) 余额均无时取 ad_create_time 最新
+   * 优先展示已绑定的 adAccountId；否则按 is_del=0 → 余额>0 → 最新创建时间
    */
   function pickCurrentSpendingTkAdAccount(store) {
     var list = getTkAdAccountsNotDeleted(store);
     if (!list.length) return null;
+    if (store.adAccountId) {
+      var bound = list.find(function(item) { return tkAdAccountId(item) === store.adAccountId; });
+      if (bound) return bound;
+    }
     var withBalance = list.filter(function(item) { return Number(item.balance) > 0; });
     var pool = withBalance.length ? withBalance : list;
     return pool.slice().sort(function(a, b) {
@@ -341,7 +343,7 @@
     })[0];
   }
 
-  /** 气泡列表：过滤废弃/待签约/确认失败；列表当前广告户置顶 */
+  /** 气泡/详情列表：绑定户置顶，其余按店铺广告户顺序（未选中户紧随绑定户之后） */
   function getTkAdAccountsForBubble(store) {
     var spending = pickCurrentSpendingTkAdAccount(store);
     var spendingId = tkAdAccountId(spending);
@@ -416,7 +418,7 @@
         status: 'STATUS_ENABLE',
         statusLabel: '启用中',
         is_del: 0,
-        matchRule: '余额 ：$250.00',
+        matchRule: '余额：$250.00',
         existsInSystem: existsPrimary
       },
       {
@@ -451,10 +453,11 @@
   function renderTkAdCredentialCandidates(candidates) {
     var list = $('tkAdCredentialList');
     if (!list) return;
+    // 默认未选；强制至少勾选 1 个后才能确认
     list.innerHTML = (candidates || []).map(function(item, index) {
       var id = tkAdAccountId(item);
-      return '<label class="tk-ad-credential-item is-checked" data-id="' + escapeHtml(id) + '">' +
-        '<input type="checkbox" checked value="' + escapeHtml(id) + '" data-index="' + index + '" />' +
+      return '<label class="tk-ad-credential-item" data-id="' + escapeHtml(id) + '">' +
+        '<input type="checkbox" value="' + escapeHtml(id) + '" data-index="' + index + '" />' +
         '<div class="tk-ad-credential-item-body">' +
           '<div class="tk-ad-credential-item-title">' + escapeHtml(item.name || '—') +
             ' <span class="tk-ad-credential-id">(广告ID: ' + escapeHtml(id) + ')</span></div>' +
@@ -478,45 +481,79 @@
     pendingTkAdCandidates = [];
   }
 
+  function upsertTkAdAccount(store, candidate, options) {
+    options = options || {};
+    var id = tkAdAccountId(candidate);
+    var existing = store.adAccounts.find(function(item) { return tkAdAccountId(item) === id; });
+    if (existing) {
+      existing.name = candidate.name || existing.name;
+      existing.balance = candidate.balance;
+      existing.ad_create_time = candidate.ad_create_time || existing.ad_create_time;
+      existing.status = candidate.status || existing.status || 'STATUS_ENABLE';
+      existing.statusLabel = candidate.statusLabel || existing.statusLabel || '启用中';
+      existing.is_del = 0;
+      if (options.refreshAuthTime) existing.lastAuthTime = options.authTime || formatNow();
+      return existing;
+    }
+    var created = {
+      id: id,
+      name: candidate.name,
+      balance: candidate.balance,
+      ad_create_time: candidate.ad_create_time || formatNow(),
+      status: 'STATUS_ENABLE',
+      statusLabel: '启用中',
+      is_del: 0,
+      lastAuthTime: options.refreshAuthTime ? (options.authTime || formatNow()) : (candidate.lastAuthTime || '—')
+    };
+    store.adAccounts.push(created);
+    return created;
+  }
+
   function applyTkAdCredentialSelection(store, selectedIds) {
     ensureTkAdAccounts(store);
     var now = formatNow();
-    var applied = [];
-    selectedIds.forEach(function(id) {
-      var candidate = pendingTkAdCandidates.find(function(item) { return tkAdAccountId(item) === id; });
-      if (!candidate) return;
-      var existing = store.adAccounts.find(function(item) { return tkAdAccountId(item) === id; });
-      if (existing) {
-        existing.name = candidate.name || existing.name;
-        existing.balance = candidate.balance;
-        existing.ad_create_time = candidate.ad_create_time || existing.ad_create_time;
-        existing.status = candidate.status || existing.status || 'STATUS_ENABLE';
-        existing.statusLabel = candidate.statusLabel || existing.statusLabel || '启用中';
-        existing.is_del = 0;
-        existing.lastAuthTime = now;
-        applied.push(existing);
-      } else {
-        var created = {
-          id: id,
-          name: candidate.name,
-          balance: candidate.balance,
-          ad_create_time: candidate.ad_create_time || now,
-          status: 'STATUS_ENABLE',
-          statusLabel: '启用中',
-          is_del: 0,
-          lastAuthTime: now
-        };
-        store.adAccounts.unshift(created);
-        applied.push(created);
-      }
+    var selectedSet = {};
+    selectedIds.forEach(function(id) { selectedSet[id] = true; });
+
+    var selectedAccounts = [];
+    var unselectedAccounts = [];
+    pendingTkAdCandidates.forEach(function(candidate) {
+      var id = tkAdAccountId(candidate);
+      var isSelected = !!selectedSet[id];
+      var account = upsertTkAdAccount(store, candidate, {
+        refreshAuthTime: isSelected,
+        authTime: now
+      });
+      if (isSelected) selectedAccounts.push(account);
+      else unselectedAccounts.push(account);
     });
-    var bound = pickBoundTkAdFromAccounts(applied) || pickCurrentSpendingTkAdAccount(store);
+
+    // 选中的广告户设为当前绑定；未选中的展示在绑定户下方
+    var bound = pickBoundTkAdFromAccounts(selectedAccounts) || selectedAccounts[0] || null;
     if (bound) {
       store.adAccountId = tkAdAccountId(bound);
       store.adAccountName = bound.name || '';
     }
     store.adAuthStatus = '已授权';
-    return { applied: applied, bound: bound };
+
+    var boundId = bound ? tkAdAccountId(bound) : '';
+    var ordered = [];
+    var seen = {};
+    function pushUnique(account) {
+      var id = tkAdAccountId(account);
+      if (!id || seen[id]) return;
+      seen[id] = true;
+      ordered.push(account);
+    }
+    if (bound) pushUnique(bound);
+    selectedAccounts.forEach(function(account) {
+      if (tkAdAccountId(account) !== boundId) pushUnique(account);
+    });
+    unselectedAccounts.forEach(pushUnique);
+    (store.adAccounts || []).forEach(pushUnique);
+    store.adAccounts = ordered;
+
+    return { applied: selectedAccounts, unselected: unselectedAccounts, bound: bound };
   }
 
   function refreshTkAdAuthViews(store) {
